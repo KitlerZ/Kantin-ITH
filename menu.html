@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <title>Menu Pembeli - KantinITH</title>
+  <link rel="stylesheet" href="../css/style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+</head>
+<body>
+  <div class="container">
+    <div class="menu-header">
+      <h2>Menu Makanan</h2>
+      <div>Saldo: <span id="saldo">Rp 0</span></div>
+      <button onclick="logout()">Logout <i class="fas fa-sign-out-alt"></i></button>
+    </div>
+
+    <div id="menu-list" class="menu-list"></div>
+
+    <h3>Keranjang</h3>
+    <ul id="cart-list"></ul>
+    <p>Total: Rp <span id="total">0</span></p>
+    <button onclick="checkout()">Checkout <i class="fas fa-shopping-cart"></i></button>
+    <p id="msg" class="info-msg"></p>
+  </div>
+
+  <script>
+    const username = sessionStorage.getItem("username");
+    if (!username) location.href = "../index.html";
+
+    let cart = [];
+
+    function fetchSaldo() {
+      fetch("../backend/login.php", {
+        method: "POST",
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ action: "get_saldo", username })
+      })
+      .then(res => res.json())
+      .then(data => {
+        document.getElementById("saldo").textContent = "Rp " + data.saldo;
+      });
+    }
+
+    function fetchMenu() {
+      fetch("../backend/login.php", {
+        method: "POST",
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ action: "get_menu" })
+      })
+      .then(res => res.json())
+      .then(menu => {
+        const list = document.getElementById("menu-list");
+        menu.forEach(item => {
+          const div = document.createElement("div");
+          div.className = "menu-card";
+          div.innerHTML = `
+            <h4>${item.nama}</h4>
+            <p>Rp ${item.harga}</p>
+            <button onclick='addToCart(${item.id}, "${item.nama}", ${item.harga})'>Tambah</button>`;
+          list.appendChild(div);
+        });
+      });
+    }
+
+    function addToCart(id, nama, harga) {
+      const existing = cart.find(i => i.menu_id === id);
+      if (existing) {
+        existing.jumlah += 1;
+        existing.subtotal += harga;
+      } else {
+        cart.push({ menu_id: id, nama, jumlah: 1, subtotal: harga });
+      }
+      renderCart();
+    }
+
+    function renderCart() {
+      const list = document.getElementById("cart-list");
+      list.innerHTML = "";
+      let total = 0;
+      cart.forEach(item => {
+        const li = document.createElement("li");
+        li.textContent = `${item.nama} x${item.jumlah} - Rp ${item.subtotal}`;
+        list.appendChild(li);
+        total += item.subtotal;
+      });
+      document.getElementById("total").textContent = total;
+    }
+
+    function checkout() {
+      fetch("../backend/login.php", {
+        method: "POST",
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+          action: "checkout",
+          username,
+          items: cart
+        })
+      })
+      .then(res => res.json())
+      .then(data => {
+        document.getElementById("msg").textContent = data.message;
+        if (data.status === "success") {
+          cart = [];
+          renderCart();
+          fetchSaldo();
+        }
+      });
+    }
+
+    function logout() {
+      sessionStorage.clear();
+      location.href = "../index.html";
+    }
+
+    fetchSaldo();
+    fetchMenu();
+  </script>
+</body>
+</html>
