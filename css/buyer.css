@@ -1,0 +1,1405 @@
+body {
+  margin: 0;
+  font-family: 'Poppins', sans-serif;
+  background-color: #f5f5f5;
+  color: #333;
+  overflow-x: hidden;
+}
+
+.layout {
+  display: flex;
+  min-height: 100vh;
+  position: relative;
+}
+
+.sidebar {
+  width: 250px;
+  background-color: #fff3e0;
+  padding: 30px 20px;
+  box-shadow: 2px 0 10px rgba(0, 0, 0, 0.05);
+  position: fixed;
+  height: 100vh;
+  z-index: 100;
+  overflow-y: auto;
+  transition: all 0.3s ease;
+}
+
+.sidebar-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 0 30px 0;
+  padding-bottom: 15px;
+  border-bottom: 2px solid rgba(0, 0, 0, 0.1);
+}
+
+.sidebar-header .logo {
+  width: 40px;
+  height: 40px;
+  object-fit: contain;
+}
+
+.sidebar-header h2 {
+  margin: 0;
+  color: #333;
+  font-size: 24px;
+}
+
+.sidebar nav a {
+  display: block;
+  margin: 15px 0;
+  color: #666;
+  text-decoration: none;
+  font-weight: 500;
+  padding: 12px 15px;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+}
+
+.sidebar nav a:hover, .sidebar nav a.active {
+  color: #fb8c00;
+  background-color: #ffffff;
+}
+
+.main {
+  flex: 1;
+  margin-left: 250px;
+  padding: 20px 30px 20px 60px;
+  background-color: #f5f5f5;
+  min-height: 100vh;
+  box-sizing: border-box;
+  width: calc(100% - 250px);
+  transition: all 0.3s ease;
+}
+
+.content-area {
+  max-width: 100%;
+  padding: 0;
+  width: 100%;
+}
+
+.dashboard-content-wrapper {
+  width: 100%;
+  margin: 0 auto;
+  padding: 0;
+}
+
+.topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: #fff;
+  padding: 15px 20px;
+  border-radius: 12px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+  margin-bottom: 30px;
+  width: 100%;
+  box-sizing: border-box;
+  flex-wrap: wrap;
+  gap: 15px;
+}
+
+.search-box {
+  flex: 1;
+  min-width: 200px;
+  max-width: 400px;
+}
+
+.search-box input {
+  width: 100%;
+  padding: 12px 20px;
+  border-radius: 25px;
+  border: 1px solid #e0e0e0;
+  font-size: 14px;
+  transition: all 0.3s ease;
+}
+
+.search-box input:focus {
+  outline: none;
+  border-color: #fb8c00;
+  box-shadow: 0 0 0 3px rgba(251, 140, 0, 0.1);
+}
+
+.topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.saldo-box {
+  background-color: #fff3e0;
+  padding: 12px 20px;
+  border-radius: 25px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #333;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+  min-width: 180px;
+  flex-wrap: wrap;
+}
+
+.saldo-box button {
+  background-color: #fb8c00;
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 30px;
+  height: 30px;
+  cursor: pointer;
+  font-size: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+}
+
+.saldo-box button::before {
+  content: '\f067'; /* Ikon plus */
+  font-family: 'Font Awesome 5 Free';
+  font-weight: 900;
+}
+
+.saldo-box button:hover {
+  background-color: #f57c00;
+  transform: scale(1.1);
+}
+
+.topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.icon {
+  font-size: 24px;
+  position: relative;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  padding: 8px;
+  border-radius: 50%;
+  background-color: #fff3e0;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.icon::before {
+  content: '\f07a'; /* Ikon shopping cart */
+  font-family: 'Font Awesome 5 Free';
+  font-weight: 900;
+}
+
+.icon:hover {
+  transform: scale(1.1);
+  background-color: #ffe0b2;
+}
+
+.icon .badge {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  background-color: #fb8c00;
+  color: white;
+  border-radius: 50%;
+  width: 22px;
+  height: 22px;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+}
+
+.profile {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  padding: 5px 10px;
+  border-radius: 25px;
+  transition: all 0.3s ease;
+}
+
+.profile:hover {
+  background-color: #fff3e0;
+}
+
+.profile-icon {
+  width: 35px;
+  height: 35px;
+  border-radius: 50%;
+  background-color: #fff3e0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  border: 2px solid #fb8c00;
+}
+
+.profile-name {
+  font-weight: 500;
+  color: #333;
+  font-size: 14px;
+}
+
+/* Profile dropdown */
+.profile-dropdown {
+  position: absolute;
+  top: 70px;
+  right: 30px;
+  background-color: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  padding: 10px 0;
+  min-width: 200px;
+  display: none;
+  z-index: 1000;
+}
+
+.profile-dropdown.active {
+  display: block;
+}
+
+.profile-dropdown a {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 20px;
+  color: #333;
+  text-decoration: none;
+  transition: all 0.3s ease;
+}
+
+.profile-dropdown a:hover {
+  background-color: #fff3e0;
+  color: #fb8c00;
+}
+
+.profile-dropdown a:last-child {
+  border-top: 1px solid #f5f5f5;
+  color: #dc3545;
+}
+
+.profile-dropdown a:last-child:hover {
+  background-color: #fff3e0;
+  color: #dc3545;
+}
+
+.judul {
+  color: #333;
+  margin: 30px 0 15px 0;
+  font-size: 22px;
+  font-weight: 600;
+  padding-left: 0;
+}
+
+.kategori {
+  margin: 0 0 30px 0;
+  display: flex;
+  gap: 10px;
+  padding-left: 0;
+}
+
+.kategori button {
+  padding: 10px 20px;
+  border: none;
+  background-color: #fff;
+  color: #666;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+}
+
+.kategori button:hover {
+  background-color: #fff3e0;
+  color: #fb8c00;
+}
+
+.kategori button.active {
+  background-color: #fb8c00;
+  color: white;
+}
+
+.menu-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 20px;
+  padding: 20px 0;
+}
+
+.menu-card {
+  background: white;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+  transition: all 0.3s ease;
+  display: flex;
+  flex-direction: column;
+}
+
+.menu-card img {
+  width: 100%;
+  height: 150px;
+  object-fit: cover;
+}
+
+.menu-card h4 {
+  margin: 15px;
+  font-size: 18px;
+  color: #333;
+}
+
+.menu-card p {
+  margin: 0 15px;
+  color: #fb8c00;
+  font-weight: 600;
+  font-size: 16px;
+}
+
+.menu-card .buttons {
+  margin-top: auto;
+  padding: 15px;
+  display: flex;
+  gap: 10px;
+}
+
+.menu-card .buttons button {
+  flex: 1;
+  padding: 10px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+/* Responsive styles */
+@media (max-width: 1024px) {
+  .sidebar {
+    width: 200px;
+  }
+  
+  .main {
+    margin-left: 200px;
+    width: calc(100% - 200px);
+    padding: 20px 20px 20px 50px;
+  }
+  
+  .menu-grid {
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  }
+}
+
+@media (max-width: 768px) {
+  .sidebar {
+    width: 0;
+    padding: 0;
+    overflow: hidden;
+  }
+  
+  .sidebar.active {
+    width: 250px;
+    padding: 30px 20px;
+    background-color: #fff3e0;
+  }
+  
+  .main {
+    margin-left: 0;
+    width: 100%;
+    padding: 15px 15px 15px 25px;
+  }
+  
+  .topbar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+  
+  .search-box {
+    max-width: 100%;
+  }
+  
+  .topbar-right {
+    justify-content: space-between;
+    gap: 10px;
+  }
+  
+  .menu-grid {
+    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  }
+
+  /* Adjust topup methods for smaller screens */
+  .topup-methods {
+    flex-direction: column;
+  }
+
+  .method-card {
+    width: 100%;
+  }
+
+  .method-header {
+    flex-direction: column; /* Stack icon and title */
+    align-items: flex-start; /* Align items to the start */
+    gap: 8px; /* Adjusted gap */
+  }
+
+  .method-icon {
+    width: 35px; /* Adjusted icon size */
+    height: 35px; /* Adjusted icon size */
+    font-size: 18px; /* Adjusted icon font size */
+  }
+
+  .method-title {
+    font-size: 16px; /* Adjusted title font size */
+  }
+
+  .method-steps li {
+    font-size: 13px; /* Adjusted step font size */
+  }
+
+  .contact-info, .cash-info {
+    padding-top: 10px; /* Adjusted padding */
+  }
+}
+
+@media (max-width: 480px) {
+  .menu-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .saldo-box {
+    min-width: 100%;
+  }
+  
+  .topbar-actions {
+    width: 100%;
+    justify-content: space-between;
+  }
+}
+
+/* Popup and overlay styles */
+.popup-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: transparent;
+  display: none;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.popup-box {
+  background: white;
+  border-radius: 12px;
+  width: 90%;
+  max-width: 500px;
+  max-height: 90vh;
+  overflow-y: auto;
+  animation: popupSlideIn 0.3s ease;
+}
+
+/* Success popup (muncul dari sudut kanan atas) */
+.success-popup {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  background: #4caf50;
+  color: white;
+  padding: 15px 25px;
+  border-radius: 8px;
+  display: none;
+  align-items: center;
+  gap: 10px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  z-index: 1001;
+  animation: slideIn 0.3s ease;
+}
+
+/* Error popup (mirip success popup, beda warna) */
+.error-popup {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  padding: 15px 25px;
+  border-radius: 5px;
+  display: none;
+  align-items: center;
+  gap: 10px;
+  z-index: 1000;
+  background: #e74c3c;
+  color: white;
+  animation: slideIn 0.3s ease-out;
+}
+
+/* Saldo warning popup (muncul di tengah, style mirip popup umum) */
+#saldoPopup {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: none;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+/* Terapkan style untuk .popup-box di dalam #saldoPopup */
+#saldoPopup .popup-box {
+  background: white;
+  border-radius: 12px;
+  width: 90%;
+  max-width: 400px;
+  max-height: 90vh;
+  overflow-y: auto;
+  animation: popupSlideIn 0.3s ease;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
+}
+
+#saldoPopup .popup-header {
+  border-bottom: 1px solid #f5f5f5;
+  padding: 20px;
+  margin-bottom: 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+#saldoPopup .popup-header h3 {
+  color: #333;
+  font-size: 18px;
+  margin: 0;
+  font-weight: 600;
+}
+
+#saldoPopup .close-popup {
+  color: #666;
+  font-size: 20px;
+  cursor: pointer;
+  padding: 5px;
+  border-radius: 50%;
+  transition: background-color 0.3s ease;
+}
+
+#saldoPopup .close-popup:hover {
+  background-color: #f5f5f5;
+  color: #333;
+}
+
+#saldoPopup .popup-content {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+/* Sesuaikan style elemen di dalam popup-content */
+#saldoPopup .saldo-warning {
+  padding: 0;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  margin-bottom: 20px;
+  border-bottom: 1px solid #f5f5f5;
+  padding-bottom: 20px;
+}
+
+#saldoPopup .warning-icon {
+  font-size: 36px;
+  color: #fb8c00;
+  margin-bottom: 0;
+  display: block;
+}
+
+#saldoPopup .saldo-warning p {
+  color: #666;
+  margin: 0;
+  line-height: 1.6;
+  font-size: 15px;
+  text-align: center;
+}
+
+#saldoPopup .saldo-info {
+  color: #333;
+  padding: 0;
+  font-size: 14px;
+  display: block;
+  margin-bottom: 10px;
+  text-align: center;
+}
+
+#saldoPopup .saldo-info span {
+  display: block;
+  margin-bottom: 3px;
+}
+
+#saldoPopup .saldo-info span:last-child {
+  margin-bottom: 0;
+  font-weight: 600;
+}
+
+#saldoPopup .saldo-info:last-child {
+  border-bottom: none;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 0;
+  padding-bottom: 0;
+}
+
+#saldoPopup .checkout-actions {
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid #f5f5f5;
+  gap: 10px;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+}
+
+#saldoPopup .checkout-actions button {
+  padding: 12px 20px;
+  font-size: 14px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+#saldoPopup .cancel-btn {
+  background: #e0e0e0;
+  color: #333;
+}
+
+#saldoPopup .cancel-btn:hover {
+  background: #ccc;
+}
+
+#saldoPopup .topup-btn {
+  background: #fb8c00;
+  color: white;
+}
+
+#saldoPopup .topup-btn:hover {
+  background: #f57c00;
+}
+
+/* Animations (contoh) */
+@keyframes popupSlideIn {
+  from {
+    transform: translateY(-20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+/* Style elemen di dalam popup */
+.popup-header {
+  padding: 20px;
+  border-bottom: 1px solid #f5f5f5;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.popup-header h3 {
+  margin: 0;
+  color: #333;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.close-popup {
+  color: #666;
+  cursor: pointer;
+  font-size: 20px;
+  padding: 5px;
+  border-radius: 50%;
+  transition: all 0.3s ease;
+}
+
+.close-popup:hover {
+  background-color: #f5f5f5;
+  color: #333;
+}
+
+.popup-content {
+  padding: 20px;
+  text-align: center;
+}
+
+/* Styles spesifik untuk konten di popup checkout */
+.checkout-summary h4 {
+  margin: 0 0 15px 0;
+  color: #333;
+  font-size: 16px;
+}
+
+.checkout-item {
+  display: flex;
+  justify-content: space-between;
+  padding: 10px 0;
+  border-bottom: 1px solid #f5f5f5;
+  font-size: 14px;
+}
+
+.checkout-total {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 15px;
+  padding-top: 15px;
+  border-top: 2px solid #f5f5f5;
+  font-weight: 600;
+  color: #333;
+}
+
+/* Styles spesifik untuk konten di popup saldo kurang */
+.saldo-warning {
+  text-align: center;
+  padding: 20px 0;
+}
+
+.warning-icon {
+  font-size: 40px;
+  margin-bottom: 15px;
+}
+
+.saldo-warning p {
+  color: #666;
+  margin: 0 0 20px 0;
+  line-height: 1.5;
+}
+
+.saldo-info {
+  display: flex;
+  justify-content: space-between;
+  padding: 10px 0;
+  border-bottom: 1px solid #f5f5f5;
+  font-size: 14px;
+}
+
+.saldo-info:last-child {
+  border-bottom: none;
+  font-weight: 600;
+  color: #333;
+}
+
+/* Styles untuk tombol di popup */
+.checkout-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.checkout-actions button {
+  flex: 1;
+  padding: 12px;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.cancel-btn {
+  background-color: #f5f5f5;
+  color: #666;
+}
+
+.cancel-btn:hover {
+  background-color: #e0e0e0;
+}
+
+.confirm-btn {
+  background-color: #fb8c00; /* Oranye */
+  color: white;
+}
+
+.confirm-btn:hover {
+  background-color: #f57c00; /* Oranye lebih gelap */
+}
+
+.topup-btn { /* Tombol "Tambah Saldo" di popup saldo kurang */
+  background-color: #4caf50; /* Hijau */
+  color: white;
+}
+
+.topup-btn:hover {
+  background-color: #43a047; /* Hijau lebih gelap */
+}
+
+/* Styles untuk icon dan pesan di success/error popup kecil */
+.success-popup .success-icon,
+.error-popup .error-icon {
+  font-size: 24px;
+}
+
+.success-popup .success-message,
+.error-popup .error-message {
+  font-weight: 500;
+}
+
+/* Saldo Page Specific Styles */
+.saldo-main-content {
+  display: flex;
+  flex-direction: column;
+    min-height: calc(100vh - 80px); /* Full height minus topbar */
+    padding: 0;
+    margin: 0;
+}
+
+.saldo-container {
+    flex: 1;
+    padding: 0;
+    margin: 0;
+    width: 100%;
+}
+
+.saldo-container h2 {
+    color: #333;
+    margin: 0;
+    padding: 20px;
+    background: #fff;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.saldo-card {
+    background: white;
+    border-radius: 0;
+    padding: 0;
+    box-shadow: none;
+  display: flex;
+    flex-direction: column;
+    min-height: calc(100vh - 140px);
+}
+
+.current-saldo {
+    text-align: center;
+  margin: 0;
+    padding: 40px 20px;
+    background: #fff3e0;
+    border-bottom: 1px solid #eee;
+}
+
+.current-saldo h3 {
+    color: #666;
+    margin-bottom: 10px;
+    font-size: 24px;
+}
+
+#current-saldo-display {
+    font-size: 3em;
+    color: #2ecc71;
+  font-weight: 600;
+}
+
+.topup-form {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    padding: 20px;
+}
+
+.topup-form h3 {
+    color: #333;
+    margin-bottom: 20px;
+    font-size: 20px;
+}
+
+.input-group {
+    margin-bottom: 30px;
+    max-width: 400px;
+    margin-left: 0;
+    margin-right: auto;
+    text-align: left;
+}
+
+.input-group label {
+    display: block;
+    margin-bottom: 10px;
+    color: #666;
+    font-size: 16px;
+    text-align: left;
+}
+
+.input-group input {
+    width: 100%;
+    padding: 15px;
+    border: 2px solid #ddd;
+    border-radius: 8px;
+    font-size: 18px;
+    text-align: left;
+}
+
+/* Payment Methods Styles */
+.topup-methods {
+    display: flex;
+    flex: 1;
+  gap: 20px;
+    margin: 0;
+    padding: 20px;
+}
+
+.method-card {
+    flex: 1;
+  background: #fff;
+    border-radius: 12px;
+    padding: 30px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  transition: all 0.3s ease;
+    border: 1px solid #eee;
+  display: flex;
+  flex-direction: column;
+}
+
+.method-header {
+  display: flex;
+  align-items: center;
+    gap: 15px;
+    margin-bottom: 25px;
+}
+
+.method-icon {
+    width: 60px;
+    height: 60px;
+  background: #fff3e0;
+    border-radius: 15px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+    font-size: 30px;
+}
+
+.method-title {
+    font-size: 24px;
+  font-weight: 600;
+  color: #333;
+}
+
+.method-steps {
+  list-style: none;
+  padding: 0;
+    margin: 0 0 25px 0;
+    flex: 1;
+}
+
+.method-steps li {
+  display: flex;
+  align-items: flex-start;
+    gap: 10px;
+    margin-bottom: 15px;
+  color: #666;
+    line-height: 1.6;
+    font-size: 16px;
+}
+
+.contact-info,
+.cash-info {
+  margin-top: auto;
+    padding-top: 20px;
+  border-top: 1px solid #eee;
+}
+
+.contact-info {
+  background: #fff8e1;
+    padding: 15px;
+    border-radius: 8px;
+}
+
+.contact-info span {
+    display: block;
+  font-weight: 500;
+  color: #333;
+    margin-bottom: 8px;
+    font-size: 16px;
+}
+
+.contact-info a {
+  color: #fb8c00;
+  text-decoration: none;
+  font-weight: 600;
+    font-size: 18px;
+}
+
+.cash-info {
+  background: #e8f5e9;
+    padding: 15px;
+    border-radius: 8px;
+}
+
+.cash-info p {
+  margin: 0;
+  color: #2e7d32;
+  font-weight: 500;
+    font-size: 16px;
+}
+
+.topup-actions {
+  display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin-top: 30px;
+    padding: 0 20px;
+}
+
+.wa-btn,
+.cash-btn {
+  padding: 15px;
+    border: none;
+  border-radius: 8px;
+    font-size: 18px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+    font-weight: 600;
+}
+
+.wa-btn {
+    background: #25D366;
+    color: white;
+}
+
+.wa-btn:hover {
+    background: #128C7E;
+    transform: translateY(-2px);
+}
+
+.cash-btn {
+    background: #fb8c00;
+    color: white;
+}
+
+.cash-btn:hover {
+    background: #f57c00;
+    transform: translateY(-2px);
+}
+
+/* Keranjang overlay styles */
+.keranjang-overlay {
+  position: fixed; /* Tetap di posisi saat scroll */
+  top: 0;
+  left: 0; /* Muncul di seluruh lebar */
+  right: 0;
+  bottom: 0;
+  width: 100%;
+  display: flex;
+  justify-content: center; /* Pusatkan keranjang-box */
+  align-items: center; /* Pusatkan keranjang-box */
+  background-color: rgba(0, 0, 0, 0.7); /* Overlay lebih gelap */
+  z-index: 999; /* Pastikan di atas konten lain */
+  /* animation: fadeIn 0.3s ease-out; */ /* Opsional: animasi masuk */
+}
+
+/* Opsional: Animasi masuk */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+
+.keranjang-box {
+  background-color: white;
+  width: 90%; /* Lebar keranjang */
+  max-width: 600px; /* Lebar maksimum */
+  max-height: 90vh; /* Tinggi maksimum */
+  border-radius: 12px; /* Sudut membulat */
+  padding: 20px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2); /* Bayangan */
+  display: flex;
+  flex-direction: column; /* Susun konten secara vertikal */
+  overflow: hidden; /* Sembunyikan konten yang meluap */
+}
+
+.keranjang-box h4 {
+  margin: 0 0 20px 0;
+  font-size: 20px;
+  border-bottom: 1px solid #eee;
+  padding-bottom: 15px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.keranjang-box ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  flex: 1; /* Memungkinkan daftar item mengisi ruang */
+  overflow-y: auto; /* Scroll jika item terlalu banyak */
+}
+
+.keranjang-box li {
+  border-bottom: 1px dashed #eee;
+  padding: 10px 0;
+}
+
+.keranjang-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  font-size: 14px;
+}
+
+.keranjang-item .item-info div {
+    margin-bottom: 4px;
+}
+
+.keranjang-item .item-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.keranjang-item .item-actions span {
+    font-weight: 600;
+    color: #333;
+}
+
+.keranjang-item .item-actions button {
+    background: none;
+  border: none;
+    cursor: pointer;
+    font-size: 18px;
+    padding: 5px;
+    border-radius: 4px;
+    transition: background-color 0.2s;
+}
+
+.keranjang-item .item-actions button:hover {
+    background-color: #f5f5f5;
+}
+
+
+.keranjang-box p {
+  margin-top: 20px;
+  font-size: 18px;
+  font-weight: 600;
+  text-align: right;
+  border-top: 2px solid #eee;
+  padding-top: 15px;
+}
+
+.keranjang-box .checkout {
+  display: block;
+  width: 100%;
+  padding: 15px;
+  background-color: #2ecc71; /* Warna hijau untuk checkout */
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 18px;
+  cursor: pointer;
+  font-weight: 600;
+  margin-top: 20px;
+  transition: background-color 0.3s ease;
+}
+
+.keranjang-box .checkout:hover {
+  background-color: #27ae60;
+}
+
+/* Responsive adjustments for the full-screen cart */
+@media (max-width: 600px) {
+    .keranjang-box {
+        width: 95%;
+  padding: 15px;
+    }
+
+    .keranjang-box h4 {
+        font-size: 18px;
+    }
+
+    .keranjang-item, .keranjang-box p {
+        font-size: 14px;
+    }
+
+    .keranjang-item .item-actions button {
+         font-size: 16px;
+    }
+
+    .keranjang-box .checkout {
+        font-size: 16px;
+        padding: 12px;
+    }
+}
+
+/* Styles untuk tombol Beli Sekarang dan + Keranjang */
+.menu-card .buttons button {
+  flex: 1;
+  padding: 10px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+.menu-card .buttons button.primary { /* Tombol Beli Sekarang */
+  background-color: #fb8c00; /* Oranye */
+  color: white;
+}
+
+.menu-card .buttons button.primary:hover {
+  background-color: #f57c00; /* Oranye lebih gelap saat hover */
+}
+
+.menu-card .buttons button.secondary { /* Tombol + Keranjang */
+  background-color: #fff; /* Putih */
+  color: #666; /* Abu-abu */
+  border: 1px solid #ddd; /* Garis tepi tipis */
+}
+
+.menu-card .buttons button.secondary:hover {
+  background-color: #fff3e0; /* Oranye muda */
+  color: #fb8c00; /* Oranye */
+  border-color: #fb8c00; /* Garis tepi oranye */
+}
+
+/* Styles khusus untuk popup logout - Menyamakan dengan logout.html */
+#logoutPopup .popup-box {
+  /* Mengambil gaya dari .logout-container di logout.html */
+  background: white;
+  padding: 40px; /* Padding lebih besar */
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1); /* Bayangan lebih kuat */
+  text-align: center; /* Pusatkan teks */
+  max-width: 400px; /* Lebar maksimum */
+  width: 90%;
+  /* Remove flex properties if popup-content handles layout */
+  /* display: flex; */
+  /* flex-direction: column; */
+  animation: fadeIn 0.5s ease; /* Tambahkan animasi masuk */
+}
+
+#logoutPopup .popup-header {
+  /* Hilangkan display: none; agar header popup terlihat */
+  display: flex; /* Mengembalikan display ke flex */
+  /* Tambahkan kembali gaya header jika diperlukan, misalnya padding atau border */
+  border-bottom: 1px solid #f5f5f5; /* Garis bawah konsisten */
+  padding: 15px 20px; /* Padding */
+  justify-content: space-between;
+  align-items: center;
+}
+
+#logoutPopup .popup-content {
+  /* Sesuaikan padding jika diperlukan, atau biarkan 0 */
+  padding: 0;
+  /* text-align: center; */ /* Already set on popup-box */
+}
+
+#logoutPopup .user-info {
+  /* Mengambil gaya dari .user-info di logout.html */
+  margin-bottom: 30px;
+}
+
+#logoutPopup .user-avatar {
+  /* Mengambil gaya dari .user-avatar di logout.html */
+  width: 80px;
+  height: 80px;
+  background: #fff3e0;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 20px; /* Pusatkan dan beri margin bawah */
+  font-size: 40px;
+}
+
+#logoutPopup .user-name {
+  /* Mengambil gaya dari .user-name di logout.html */
+  font-size: 24px;
+  font-weight: 600;
+  color: #333;
+  margin: 0 0 5px;
+}
+
+#logoutPopup .user-role {
+  /* Mengambil gaya dari .user-role di logout.html */
+  color: #666;
+  margin: 0;
+  /* font-size: default; */
+}
+
+#logoutPopup .logout-message {
+  /* Mengambil gaya dari .logout-message di logout.html */
+  color: #666;
+  margin-bottom: 30px;
+  line-height: 1.6;
+  text-align: center; /* Pastikan teks terpusat */
+}
+
+/* Tombol di popup logout (menggunakan .checkout-actions sebagai wrapper) */
+#logoutPopup .checkout-actions {
+  /* Mengembalikan tata letak tombol agar flexbox digunakan */
+  display: flex; /* Gunakan flexbox */
+  justify-content: center; /* Pusatkan tombol */
+  gap: 10px; /* Jarak antar tombol */
+  margin-top: 20px; /* Margin atas */
+  border-top: 1px solid #f5f5f5; /* Tambahkan garis atas jika diinginkan */
+  padding-top: 20px; /* Padding atas */
+}
+
+#logoutPopup .checkout-actions .cancel-btn {
+    /* Hapus display: none; agar tombol 'Tidak' terlihat */
+    display: inline-block; /* Tampilkan sebagai inline-block atau flex item */
+    /* Jika ingin gaya tombol 'Tidak' kembali seperti default .cancel-btn, hapus aturan spesifik di bawah ini */
+    /* background: #e0e0e0; */
+    /* color: #333; */
+}
+
+#logoutPopup .checkout-actions .confirm-btn {
+  /* Sesuaikan gaya tombol 'Ya, Keluar' jika diperlukan */
+  /* Jika ingin gaya kembali seperti default .confirm-btn, hapus aturan spesifik di bawah ini */
+  /* background: #fb8c00; */
+  /* color: white; */
+  /* padding: 12px 20px; */
+  /* border-radius: 8px; */
+  /* font-size: 14px; */
+  /* font-weight: 600; */
+  /* transition: background-color 0.3s ease; */
+  /* display: inline-block; */
+  /* margin: 0; */ /* Remove margin: 0 auto; */
+}
+
+/* Tambahkan animasi fadeIn jika belum ada di css/buyer.css */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Sembunyikan tombol tutup (✖) khusus untuk popup logout */
+#logoutPopup .close-popup {
+    display: none;
+}
