@@ -14,7 +14,6 @@ $action = $data['action'] ?? '';
 try {
     switch ($action) {
         case 'get_all':
-            // Logic to fetch all menu items
             $sql = "SELECT id, nama, harga, kategori, stok, status FROM menu ORDER BY id DESC";
             $result = $conn->query($sql);
             
@@ -30,7 +29,6 @@ try {
             break;
 
         case 'add_menu':
-            // Logic to add a new menu item
             $nama = $conn->real_escape_string($data['nama']);
             $harga = (float)$data['harga'];
             $kategori = $conn->real_escape_string($data['kategori'] ?? null);
@@ -54,7 +52,7 @@ try {
             break;
 
         case 'update_menu':
-            // Logic to update an existing menu item
+
             $id = (int)$data['id'];
             $nama = $conn->real_escape_string($data['nama']);
             $harga = (float)$data['harga'];
@@ -79,7 +77,6 @@ try {
             break;
 
         case 'delete_menu':
-            // Logic to delete a menu item
             $id = (int)$data['id'];
 
             $sql = "DELETE FROM menu WHERE id = ?";
