@@ -2,7 +2,7 @@
 header('Content-Type: application/json');
 require_once 'db.php';
 
-// Fungsi untuk mendapatkan semua pengguna
+
 function getAllUsers($conn) {
     $query = "SELECT id, username, password, role, saldo FROM users";
     $result = mysqli_query($conn, $query);
@@ -19,7 +19,7 @@ function getAllUsers($conn) {
     return ['status' => 'success', 'users' => $users];
 }
 
-// Fungsi untuk mendapatkan detail pengguna
+
 function getUserDetails($conn, $userId) {
     $query = "SELECT id, username, password, role, saldo FROM users WHERE id = ?";
     $stmt = mysqli_prepare($conn, $query);
@@ -39,7 +39,7 @@ function getUserDetails($conn, $userId) {
     return ['status' => 'success', 'user' => $user];
 }
 
-// Fungsi untuk memperbarui pengguna
+
 function updateUser($conn, $userId, $username, $role, $password = null, $saldo = null) {
     $query = "UPDATE users SET username = ?, role = ?";
     $params = [$username, $role];
@@ -71,7 +71,7 @@ function updateUser($conn, $userId, $username, $role, $password = null, $saldo =
     return ['status' => 'success', 'message' => 'Pengguna berhasil diperbarui'];
 }
 
-// Fungsi untuk menghapus pengguna
+
 function deleteUser($conn, $userId) {
     $query = "DELETE FROM users WHERE id = ?";
     $stmt = mysqli_prepare($conn, $query);
@@ -84,7 +84,7 @@ function deleteUser($conn, $userId) {
     return ['status' => 'success', 'message' => 'Pengguna berhasil dihapus'];
 }
 
-// Fungsi untuk menambah pengguna baru
+
 function addUser($conn, $username, $password, $role, $saldo = 0) {
     $query = "INSERT INTO users (username, password, role, saldo) VALUES (?, ?, ?, ?)";
     $stmt = mysqli_prepare($conn, $query);
@@ -97,7 +97,7 @@ function addUser($conn, $username, $password, $role, $saldo = 0) {
     return ['status' => 'success', 'message' => 'Pengguna berhasil ditambahkan'];
 }
 
-// Handle request
+
 $data = json_decode(file_get_contents('php://input'), true);
 $action = $data['action'] ?? '';
 
@@ -127,12 +127,12 @@ try {
             break;
         
         case 'add_user':
-            // Validasi input
+
             if (empty($data['username']) || empty($data['password']) || empty($data['role'])) {
                 throw new Exception('Username, password, dan role harus diisi');
             }
 
-            // Cek apakah username sudah ada
+
             $stmt = $conn->prepare("SELECT id FROM users WHERE username = ?");
             $stmt->bind_param("s", $data['username']);
             $stmt->execute();
@@ -142,13 +142,13 @@ try {
                 throw new Exception('Username sudah digunakan');
             }
 
-            // Hash password
             $hashedPassword = password_hash($data['password'], PASSWORD_DEFAULT);
             
-            // Set saldo default untuk admin
+
             $saldo = ($data['role'] === 'admin') ? 0 : ($data['saldo'] ?? 0);
 
-            // Insert user baru
+
+
             $stmt = $conn->prepare("INSERT INTO users (username, password, role, saldo) VALUES (?, ?, ?, ?)");
             $stmt->bind_param("sssd", $data['username'], $hashedPassword, $data['role'], $saldo);
             
