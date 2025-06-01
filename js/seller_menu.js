@@ -1,38 +1,27 @@
 // File: js/seller_menu.js
 
 document.addEventListener('DOMContentLoaded', () => {
-    // Check if user is logged in and is a seller (optional, already in seller_common.js)
-    // const role = sessionStorage.getItem('role');
-    // if (!role || role !== 'seller') {
-    //   window.location.href = '../index.html';
-    //   return;
-    // }
-
     fetchMenuItems();
     setupEventListeners();
-    updateProfileInfo(); // Assuming updateProfileInfo is in seller_common.js
+    updateProfileInfo();
 });
 
 function setupEventListeners() {
-    // Add Menu Form Submit
     const addMenuForm = document.getElementById('addMenuForm');
     if (addMenuForm) {
         addMenuForm.addEventListener('submit', handleAddMenu);
     }
 
-    // Edit Menu Form Submit
     const editMenuForm = document.getElementById('editMenuForm');
     if (editMenuForm) {
         editMenuForm.addEventListener('submit', handleEditMenu);
     }
 
-    // Event delegation for Edit and Delete buttons
     const menuTableBody = document.querySelector('#menuTable tbody');
     if (menuTableBody) {
         menuTableBody.addEventListener('click', handleTableActions);
     }
 
-     // Close popups by clicking outside
     document.querySelectorAll('.popup-overlay').forEach(overlay => {
         overlay.addEventListener('click', (e) => {
             if (e.target === overlay) {
@@ -42,7 +31,6 @@ function setupEventListeners() {
     });
 }
 
-// --- FETCH MENU ITEMS ---
 async function fetchMenuItems() {
     const menuTableBody = document.querySelector('#menuTable tbody');
     if (!menuTableBody) return;
@@ -68,12 +56,11 @@ async function fetchMenuItems() {
     }
 }
 
-// --- DISPLAY MENU ITEMS ---
 function displayMenuItems(menuItems) {
     const menuTableBody = document.querySelector('#menuTable tbody');
     if (!menuTableBody) return;
 
-    menuTableBody.innerHTML = ''; // Clear loading/placeholder row
+    menuTableBody.innerHTML = '';
 
     if (menuItems.length === 0) {
         menuTableBody.innerHTML = '<tr><td colspan="6">Belum ada menu yang ditambahkan.</td></tr>';
@@ -89,32 +76,51 @@ function displayMenuItems(menuItems) {
             <td>${item.stok}</td>
             <td>${item.status}</td>
             <td>
-                <button class="btn small-btn icon-btn edit-btn" data-id="${item.id}"
+                <button class="btn small-btn secondary-btn edit-btn" data-id="${item.id}"
                     data-nama="${item.nama}"
                     data-harga="${item.harga}"
                     data-kategori="${item.kategori || ''}"
                     data-stok="${item.stok}"
                     data-status="${item.status}"
+                    title="Edit"
                 >
-                    <i class="uil uil-edit"></i>
+                    <i class="uil uil-pen"></i>
                 </button>
-                <button class="btn small-btn icon-btn delete-btn" data-id="${item.id}"><i class="uil uil-trash"></i></button>
+                <button class="btn small-btn danger-btn delete-btn" data-id="${item.id}" title="Hapus">
+                    <i class="uil uil-trash"></i>
+                </button>
             </td>
         `;
         menuTableBody.appendChild(row);
     });
 }
 
-// --- HANDLE ADD MENU ---
 async function handleAddMenu(event) {
     event.preventDefault();
 
     const form = event.target;
     const nama = form.querySelector('#nama').value;
-    const harga = form.querySelector('#harga').value;
+    let hargaString = form.querySelector('#harga').value;
     const kategori = form.querySelector('#kategori').value;
     const stok = form.querySelector('#stok').value;
     const status = form.querySelector('#status').value;
+
+    // Validasi: Pastikan kategori sudah dipilih
+    if (kategori === '') {
+        alert('Mohon pilih kategori menu.');
+        return;
+    }
+
+    // Bersihkan string harga: hapus semua karakter non-digit kecuali koma atau titik jika digunakan sebagai desimal
+    // Berdasarkan contoh "15.000", asumsi titik adalah pemisah ribuan.
+    hargaString = hargaString.replace(/[^0-9]/g, ''); // Hapus semua non-digit
+
+    const harga = parseFloat(hargaString);
+
+    if (isNaN(harga) || harga < 0) {
+        alert('Masukkan harga yang valid.');
+        return;
+    }
 
     try {
         const response = await fetch('../backend/manage_menu.php', {
@@ -132,9 +138,9 @@ async function handleAddMenu(event) {
         const data = await response.json();
 
         if (data.status === 'success') {
-            alert(data.message); // Use alert for now, can replace with custom popup
-            form.reset(); // Clear form
-            fetchMenuItems(); // Refresh the menu list
+            alert(data.message);
+            form.reset();
+            fetchMenuItems();
         } else {
             alert('Gagal menambahkan menu: ' + (data.message || 'Unknown error'));
         }
@@ -144,11 +150,9 @@ async function handleAddMenu(event) {
     }
 }
 
-// --- HANDLE TABLE ACTIONS (Edit/Delete) ---
 function handleTableActions(event) {
     const target = event.target;
 
-    // Handle Edit Button Click
     if (target.classList.contains('edit-btn')) {
         const menuId = target.dataset.id;
         const menuNama = target.dataset.nama;
@@ -157,7 +161,6 @@ function handleTableActions(event) {
         const menuStok = target.dataset.stok;
         const menuStatus = target.dataset.status;
 
-        // Populate the edit form
         document.getElementById('editMenuId').value = menuId;
         document.getElementById('editNama').value = menuNama;
         document.getElementById('editHarga').value = menuHarga;
@@ -165,11 +168,9 @@ function handleTableActions(event) {
         document.getElementById('editStok').value = menuStok;
         document.getElementById('editStatus').value = menuStatus;
 
-        // Show the edit popup
         document.getElementById('editMenuPopup').style.display = 'flex';
 
     } else if (target.classList.contains('delete-btn')) {
-        // Handle Delete Button Click
         const menuId = target.dataset.id;
 
         if (confirm('Anda yakin ingin menghapus menu ini?')) {
@@ -178,7 +179,6 @@ function handleTableActions(event) {
     }
 }
 
-// --- HANDLE EDIT MENU ---
 async function handleEditMenu(event) {
     event.preventDefault();
 
@@ -207,9 +207,9 @@ async function handleEditMenu(event) {
         const data = await response.json();
 
         if (data.status === 'success') {
-            alert(data.message); // Use alert for now
-            closePopup('editMenuPopup'); // Close the popup
-            fetchMenuItems(); // Refresh the list
+            alert(data.message);
+            closePopup('editMenuPopup');
+            fetchMenuItems();
         } else {
             alert('Gagal memperbarui menu: ' + (data.message || 'Unknown error'));
         }
@@ -219,7 +219,6 @@ async function handleEditMenu(event) {
     }
 }
 
-// --- HANDLE DELETE MENU ---
 async function handleDeleteMenu(menuId) {
     try {
         const response = await fetch('../backend/manage_menu.php', {
@@ -233,8 +232,8 @@ async function handleDeleteMenu(menuId) {
         const data = await response.json();
 
         if (data.status === 'success') {
-            alert(data.message); // Use alert for now
-            fetchMenuItems(); // Refresh the list
+            alert(data.message);
+            fetchMenuItems();
         } else {
             alert('Gagal menghapus menu: ' + (data.message || 'Unknown error'));
         }
@@ -244,9 +243,8 @@ async function handleDeleteMenu(menuId) {
     }
 }
 
-// --- POPUP FUNCTIONS (Assuming these are common) ---
 function showLogout() {
-     document.getElementById('logoutPopup').style.display = 'flex';
+    document.getElementById('logoutPopup').style.display = 'flex';
 }
 
 function closePopup(popupId) {
@@ -254,32 +252,27 @@ function closePopup(popupId) {
 }
 
 function updateProfileInfo() {
-    // Placeholder - implement actual logic if needed
-    const username = sessionStorage.getItem('username') || 'User';
-    const role = sessionStorage.getItem('role') || 'Unknown Role';
+    const username = localStorage.getItem('loggedInUsername') || 'User';
+    const role = localStorage.getItem('loggedInUserRole') || 'Penjual';
 
     const profileUsernameSpan = document.getElementById('profileUsername');
     const profileRoleSpan = document.getElementById('profileRole');
-    const topbarUsernameSpan = document.querySelector('.navbar .top-nav a:first-child'); // Assuming topbar exists
+    const topbarUsernameSpan = document.querySelector('.navbar .top-nav .profile-name');
     const sidebarLogoutLink = document.getElementById('logoutLinkSidebar');
 
     if (profileUsernameSpan) profileUsernameSpan.textContent = username;
     if (profileRoleSpan) profileRoleSpan.textContent = role;
 
-     // Update username in sidebar logout link if it exists
-     if(sidebarLogoutLink) {
-         sidebarLogoutLink.innerHTML = `<i class="uil uil-signout"></i> Logout (${username})`;
-     }
+    if(sidebarLogoutLink) {
+        sidebarLogoutLink.innerHTML = `<i class="uil uil-signout"></i> Logout (${username})`;
+    }
 
-     // Update username in topbar if it exists (for smaller screens)
-      if(topbarUsernameSpan) {
-         topbarUsernameSpan.innerHTML = `<i class="uil uil-user"></i> ${username} (${role})`;
-      }
+    if(topbarUsernameSpan) {
+        topbarUsernameSpan.textContent = username;
+    }
 }
 
-// Basic logout function (assuming it clears session and redirects)
 function logout() {
-    // Implement actual logout logic here
-    sessionStorage.clear(); // Clear session storage
-    window.location.href = '../index.html'; // Redirect to login page
+    localStorage.clear();
+    window.location.href = '../index.html';
 } 
