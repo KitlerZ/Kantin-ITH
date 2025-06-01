@@ -22,9 +22,6 @@ if ($query && $query->num_rows > 0) {
     if ($saldo >= $total) {
         $conn->query("UPDATE users SET saldo = saldo - $total WHERE id = $user_id");
 
-        // Simpan ke tabel pesanan (belum diimplementasikan penuh)
-        // $conn->query("INSERT INTO orders (...) VALUES (...)");
-
         echo json_encode(["status" => "success", "message" => "Pesanan berhasil"]);
     } else {
         echo json_encode(["status" => "failed", "message" => "Saldo tidak cukup"]);
