@@ -4,7 +4,6 @@ include 'db.php';
 header('Content-Type: application/json');
 
 try {
-    // Periksa isi tabel users
     $query = "SELECT * FROM users";
     $result = mysqli_query($conn, $query);
     
