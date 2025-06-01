@@ -1,5 +1,5 @@
 <?php
-ob_start(); // Start output buffering
+ob_start();
 $host = 'localhost';
 $user = 'root';
 $pass = '';
@@ -12,7 +12,7 @@ try {
         throw new Exception("Koneksi database gagal: " . $conn->connect_error);
     }
 } catch (Exception $e) {
-    ob_end_clean(); // Clean any output before sending JSON
+    ob_end_clean(); 
     header('Content-Type: application/json');
     http_response_code(500);
     echo json_encode([
