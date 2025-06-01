@@ -1,5 +1,3 @@
-// File: js/seller_menu.js
-
 document.addEventListener('DOMContentLoaded', () => {
     fetchMenuItems();
     setupEventListeners();
@@ -105,15 +103,14 @@ async function handleAddMenu(event) {
     const stok = form.querySelector('#stok').value;
     const status = form.querySelector('#status').value;
 
-    // Validasi: Pastikan kategori sudah dipilih
+ 
     if (kategori === '') {
         alert('Mohon pilih kategori menu.');
         return;
     }
 
-    // Bersihkan string harga: hapus semua karakter non-digit kecuali koma atau titik jika digunakan sebagai desimal
-    // Berdasarkan contoh "15.000", asumsi titik adalah pemisah ribuan.
-    hargaString = hargaString.replace(/[^0-9]/g, ''); // Hapus semua non-digit
+
+    hargaString = hargaString.replace(/[^0-9]/g, ''); 
 
     const harga = parseFloat(hargaString);
 
