@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Riwayat Pesanan - KantinITH</title>
+  <link rel="stylesheet" href="../css/buyer.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://unicons.iconscout.com/release/v4.0.8/css/line.css">
+</head>
+<body>
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <img src="../aset/logo.png" alt="KantinITH Logo" class="logo">
+        <h2>KantinITH</h2>
+      </div>
+      <nav>
+        <a href="menu.html"><i class="uil uil-estate"></i> Dashboard</a>
+        <a href="saldo.html"><i class="uil uil-wallet"></i> Saldo</a>
+        <a href="#" class="active"><i class="uil uil-history"></i> Riwayat Pesanan</a>
+        <a href="#" class="logout-link"><i class="uil uil-sign-out-alt"></i> Logout</a>
+      </nav>
+    </aside>
+
+    <div class="main">
+      <div class="content-area">
+        <header class="topbar">
+          <div class="topbar-right">
+            <div class="saldo-box">
+              Saldo: <span id="saldo">Rp 0</span>
+            </div>
+            <div class="topbar-actions">
+              <div class="icon" onclick="window.location.href='menu.html'">
+                🛒
+                <span class="badge" id="keranjang-badge">0</span>
+              </div>
+              <div class="profile" onclick="toggleProfile()">
+                <div class="profile-icon">👤</div>
+                <span class="profile-name">UsernamePenjualAnda</span>
+              </div>
+            </div>
+          </div>
+        </header>
+
+        <div class="profile-dropdown" id="profileDropdown">
+          <a href="#"><span>👤</span> Profile</a>
+          <a href="#"><span>📱</span> Bantuan</a>
+          <a href="#" class="logout-link"><span>🚪</span> Logout</a>
+        </div>
+
+        <div class="order-history-content">
+          <div class="order-history-container">
+            <h2>Riwayat Pesanan</h2>
+            <div class="order-filters">
+              <select id="statusFilter" onchange="filterOrders()" class="pretty-select">
+                <option value="all">Semua Status</option>
+                <option value="menunggu">Menunggu</option>
+                <option value="diproses">Diproses</option>
+                <option value="selesai">Selesai</option>
+              </select>
+              <select id="timeFilter" onchange="filterOrders()" class="pretty-select">
+                <option value="all">Semua Waktu</option>
+                <option value="today">Hari Ini</option>
+                <option value="this_week">Minggu Ini</option>
+                <option value="this_month">Bulan Ini</option>
+              </select>
+            </div>
+            <div id="activeFilterDisplay" class="active-filter-display"></div>
+            <!-- The table will now directly follow the activeFilterDisplay -->
+            <div class="table-responsive">
+              <table class="order-history-table styled-table">
+                <thead>
+                  <tr>
+                    <th>ID TRANSAKSI</th>
+                    <th>KETERANGAN</th>
+                    <th>JUMLAH</th>
+                    <th>WAKTU TRANSAKSI</th>
+                    <th>STATUS</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <!-- Order rows will be inserted here by JavaScript -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="popup-overlay" id="orderDetailPopup">
+    <div class="popup-box">
+      <div class="popup-header">
+        <h3>Detail Pesanan</h3>
+        <span class="close-popup" onclick="closePopup('orderDetailPopup')">✖</span>
+      </div>
+      <div class="popup-content">
+        <div class="order-details">
+          <div class="order-info">
+            <p><strong>ID Pesanan:</strong> <span id="detailOrderId"></span></p>
+            <p><strong>Tanggal:</strong> <span id="detailOrderDate"></span></p>
+            <p><strong>Status:</strong> <span id="detailOrderStatus"></span></p>
+            <p><strong>Total:</strong> <span id="detailOrderTotal"></span></p>
+          </div>
+          <div class="order-items">
+            <h4>Item Pesanan</h4>
+            <div id="detailOrderItems"></div>
+          </div>
+        </div>
+        <div class="popup-actions">
+          <button class="cancel-btn" onclick="closePopup('orderDetailPopup')">Tutup</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="popup-overlay" id="logoutPopup">
+    <div class="popup-box">
+      <div class="popup-header">
+        <h3>Konfirmasi Logout</h3>
+        <span class="close-popup" onclick="closePopup('logoutPopup')">✖</span>
+      </div>
+      <div class="popup-content">
+        <div class="user-info">
+          <div class="user-avatar">👤</div>
+          <h4 class="user-name" id="logoutUserName"></h4>
+          <p class="user-role" id="logoutUserRole"></p>
+        </div>
+        <p class="logout-message">
+          Apakah Anda yakin ingin keluar dari sistem?
+        </p>
+        <div class="checkout-actions">
+          <button class="cancel-btn" onclick="closePopup('logoutPopup')">Batal</button>
+          <button class="confirm-btn" onclick="confirmLogout()">Ya, Keluar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <style>
+    .styled-table {
+      border-collapse: separate;
+      border-spacing: 0;
+      width: 100%;
+      background: #fff;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.07);
+      margin-top: 18px;
+    }
+    .styled-table th, .styled-table td {
+      padding: 14px 18px;
+      text-align: left;
+      font-size: 1rem;
+    }
+    .styled-table thead {
+      background: linear-gradient(90deg, #fb8c00 0%, #ffa726 100%);
+      color: #fff;
+    }
+    .styled-table tbody tr {
+      border-bottom: 1px solid #f0f0f0;
+      transition: background 0.2s;
+    }
+    .styled-table tbody tr:last-child {
+      border-bottom: none;
+    }
+    .styled-table tbody tr:hover {
+      background: #fff3e0;
+    }
+    .styled-table td {
+      color: #333;
+      vertical-align: middle;
+    }
+    .styled-table th {
+      font-weight: 600;
+      letter-spacing: 0.5px;
+    }
+    @media (max-width: 700px) {
+      .styled-table th, .styled-table td {
+        padding: 10px 6px;
+        font-size: 0.95rem;
+      }
+    }
+    .pretty-select {
+      padding: 10px 16px;
+      border-radius: 8px;
+      border: 1.5px solid #fb8c00;
+      background: #fff;
+      color: #fb8c00;
+      font-size: 1rem;
+      font-family: 'Poppins', sans-serif;
+      margin-right: 10px;
+      margin-bottom: 8px;
+      transition: border 0.2s, box-shadow 0.2s;
+      box-shadow: 0 1px 6px rgba(251,140,0,0.07);
+      outline: none;
+    }
+    .pretty-select:focus {
+      border-color: #ffa726;
+      box-shadow: 0 2px 8px rgba(251,140,0,0.15);
+    }
+    .pretty-select option {
+      color: #333;
+      background: #fff;
+    }
+  </style>
+
+  <script src="../js/buyer_common.js"></script>
+  <script>
+    let allOrders = []; // Global variable to store all fetched orders
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const userId = localStorage.getItem('loggedInUserId');
+      if (!userId) {
+        window.location.href = "../index.html";
+        return;
+      }
+
+      const profileNameElement = document.querySelector('.profile-name');
+      if (profileNameElement) {
+        const loggedInUsername = localStorage.getItem('loggedInUsername') || '';
+        profileNameElement.textContent = loggedInUsername;
+      }
+
+      updateSaldo();
+      loadOrderHistory();
+    });
+
+    function updateSaldo() {
+      const userId = localStorage.getItem('loggedInUserId');
+      if (!userId) return;
+
+      fetch('../backend/login.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'get_saldo', userId: userId })
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data && typeof data.saldo === 'number') {
+          const formattedSaldo = new Intl.NumberFormat('id-ID').format(data.saldo);
+          document.getElementById('saldo').textContent = `Rp ${formattedSaldo}`;
+        }
+      })
+      .catch(error => {
+        console.error('Error fetching saldo:', error);
+      });
+    }
+
+    function loadOrderHistory() {
+      const userId = localStorage.getItem('loggedInUserId');
+      if (!userId) return;
+
+      fetch('../backend/orders.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'get_order_history',
+          userId: userId
+        })
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.status === 'success') {
+          allOrders = data.orders;
+          console.log('Raw orders data:', allOrders);
+          renderOrderHistory(allOrders);
+          updateFilterDisplay();
+        } else {
+          showError(data.message || 'Gagal memuat riwayat pesanan');
+        }
+      })
+      .catch(error => {
+        console.error('Error:', error);
+        showError('Gagal memuat riwayat pesanan');
+      });
+    }
+
+    function renderOrderHistory(ordersToRender) {
+      const orderHistoryTableBody = document.querySelector('.order-history-table tbody');
+      orderHistoryTableBody.innerHTML = ''; // Clear previous content
+
+      if (ordersToRender.length === 0) {
+        orderHistoryTableBody.innerHTML = '<tr><td colspan="5" class="no-data">Tidak ada riwayat pesanan.</td></tr>';
+        return;
+      }
+
+      ordersToRender.forEach(order => {
+        const row = document.createElement('tr');
+
+        const description = order.items.map(item => item.name).join(', ');
+        const totalAmountFormatted = new Intl.NumberFormat('id-ID').format(order.total_amount);
+        // Format the date to match the image: DD/MM/YYYY, HH.MM.SS
+        const orderDate = new Date(order.created_at);
+        const day = String(orderDate.getDate()).padStart(2, '0');
+        const month = String(orderDate.getMonth() + 1).padStart(2, '0'); // Months are 0-indexed
+        const year = orderDate.getFullYear();
+        const hours = String(orderDate.getHours()).padStart(2, '0');
+        const minutes = String(orderDate.getMinutes()).padStart(2, '0');
+        const seconds = String(orderDate.getSeconds()).padStart(2, '0');
+        const orderDateFormatted = `${day}/${month}/${year}, ${hours}.${minutes}.${seconds}`;
+
+        // Determine status class based on the status value
+        let statusClass = '';
+        if (order.status) {
+          if (order.status.toLowerCase() === 'menunggu') {
+            statusClass = 'status-pending';
+          } else if (order.status.toLowerCase() === 'diproses') {
+            statusClass = 'status-diproses';
+          } else if (order.status.toLowerCase() === 'selesai') {
+            statusClass = 'status-selesai';
+          }
+        }
+
+        row.innerHTML = `
+          <td>${order.id}</td>
+          <td>${description}</td>
+          <td>Rp ${totalAmountFormatted}</td>
+          <td>${orderDateFormatted}</td>
+          <td><span class="status-badge ${statusClass}">${order.status}</span></td>
+        `;
+        orderHistoryTableBody.appendChild(row);
+      });
+    }
+
+    function filterOrders() {
+      const statusFilter = document.getElementById('statusFilter').value;
+      const timeFilter = document.getElementById('timeFilter').value;
+      
+      let filteredOrders = allOrders;
+
+      if (statusFilter !== 'all') {
+        filteredOrders = filteredOrders.filter(order => order.status.toLowerCase() === statusFilter);
+      }
+
+      const now = new Date();
+      if (timeFilter === 'today') {
+        filteredOrders = filteredOrders.filter(order => new Date(order.created_at).toDateString() === now.toDateString());
+      } else if (timeFilter === 'this_week') {
+        const firstDayOfWeek = new Date(now.setDate(now.getDate() - now.getDay())); // Adjust to start on Sunday
+        filteredOrders = filteredOrders.filter(order => new Date(order.created_at) >= firstDayOfWeek);
+      } else if (timeFilter === 'this_month') {
+        filteredOrders = filteredOrders.filter(order => new Date(order.created_at).getMonth() === now.getMonth() && new Date(order.created_at).getFullYear() === now.getFullYear());
+      }
+
+      renderOrderHistory(filteredOrders);
+      updateFilterDisplay();
+    }
+
+    function updateFilterDisplay() {
+      const statusFilterText = document.getElementById('statusFilter').options[document.getElementById('statusFilter').selectedIndex].text;
+      const timeFilterText = document.getElementById('timeFilter').options[document.getElementById('timeFilter').selectedIndex].text;
+      const activeFilterDisplay = document.getElementById('activeFilterDisplay');
+
+      if (statusFilterText === 'Semua Status' && timeFilterText === 'Semua Waktu') {
+        activeFilterDisplay.textContent = '';
+        activeFilterDisplay.style.display = 'none';
+      } else {
+        let filterText = 'Filter Aktif:';
+        if (statusFilterText !== 'Semua Status') {
+          filterText += ` Status: ${statusFilterText}`;
+        }
+        if (timeFilterText !== 'Semua Waktu') {
+          filterText += ` Waktu: ${timeFilterText}`;
+        }
+        activeFilterDisplay.textContent = filterText;
+        activeFilterDisplay.style.display = 'block';
+      }
+    }
+
+    function showError(message) {
+      const errorDisplay = document.getElementById('error-message') || document.createElement('div');
+      if (!document.getElementById('error-message')) {
+        errorDisplay.id = 'error-message';
+        errorDisplay.className = 'error-message popup-overlay';
+        document.querySelector('.order-history-container').prepend(errorDisplay);
+      }
+      errorDisplay.textContent = message;
+      errorDisplay.classList.add('active');
+      setTimeout(() => {
+        errorDisplay.classList.remove('active');
+      }, 3000);
+    }
+
+    function closePopup(popupId) {
+      const popup = document.getElementById(popupId);
+      if (popup) {
+        popup.classList.remove('active');
+      }
+    }
+
+    function toggleProfile() {
+      const profileDropdown = document.getElementById('profileDropdown');
+      if (profileDropdown) {
+        profileDropdown.classList.toggle('active');
+      }
+    }
+
+    window.onclick = function(event) {
+      // Check if click is outside logoutPopup or orderDetailPopup and their toggles
+      const logoutPopup = document.getElementById('logoutPopup');
+      const orderDetailPopup = document.getElementById('orderDetailPopup');
+      const profileDropdown = document.getElementById('profileDropdown');
+
+      const isClickInsideLogout = logoutPopup && logoutPopup.contains(event.target);
+      const isClickInsideOrderDetail = orderDetailPopup && orderDetailPopup.contains(event.target);
+      const isClickInsideProfileDropdown = profileDropdown && profileDropdown.contains(event.target);
+      const isClickOnLogoutToggle = event.target.closest('a[class="logout-link"]');
+      const isClickOnProfileToggle = event.target.closest('.profile');
+
+      if (logoutPopup && logoutPopup.classList.contains('active') && !isClickInsideLogout && !isClickOnLogoutToggle) {
+          closePopup('logoutPopup');
+      }
+      if (orderDetailPopup && orderDetailPopup.classList.contains('active') && !isClickInsideOrderDetail) {
+          closePopup('orderDetailPopup');
+      }
+      if (profileDropdown && profileDropdown.classList.contains('active') && !isClickInsideProfileDropdown && !isClickOnProfileToggle) {
+          profileDropdown.classList.remove('active');
+      }
+    };
+
+    function confirmLogout() {
+      localStorage.clear();
+      window.location.href = '../index.html';
+    }
+  </script>
+</body>
+</html> 
