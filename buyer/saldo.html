@@ -6,7 +6,7 @@
   <title>Kelola Saldo - KantinITH</title>
   <link rel="stylesheet" href="../css/buyer.css" />
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+  <link rel="stylesheet" href="https://unicons.iconscout.com/release/v4.0.8/css/line.css">
 </head>
 <body>
   <div class="layout">
@@ -18,19 +18,17 @@
       <nav>
         <a href="menu.html"><i class="uil uil-estate"></i> Dashboard</a>
         <a href="#" class="active"><i class="uil uil-wallet"></i> Saldo</a>
-        <a href="#" onclick="logout()"><i class="uil uil-sign-out-alt"></i> Logout</a>
+        <a href="riwayat_pesanan.html"><i class="uil uil-history"></i> Riwayat Pesanan</a>
+        <a href="#" class="logout-link"><i class="uil uil-sign-out-alt"></i> Logout</a>
       </nav>
     </aside>
 
     <div class="main">
       <div class="content-area">
       <header class="topbar">
-        <div class="search-box">
-          <input type="text" placeholder="Cari menu..." disabled>
-        </div>
         <div class="topbar-right">
           <div class="saldo-box">
-            Saldo: <span id="saldo">Rp 0</span>
+            Saldo: <span id="saldo">Rp 0</span> <button onclick="tambahSaldo()"><i class="uil uil-plus"></i></button>
           </div>
           <div class="topbar-actions">
             <div class="icon" onclick="window.location.href='menu.html'">
@@ -39,7 +37,7 @@
             </div>
             <div class="profile" onclick="toggleProfile()">
               <div class="profile-icon">👤</div>
-              <span class="profile-name">UsernamePenjualAnda</span>
+              <span class="profile-name">UsernamePembeliAnda</span>
             </div>
           </div>
         </div>
@@ -48,81 +46,107 @@
       <div class="profile-dropdown" id="profileDropdown">
         <a href="#"><span>👤</span> Profile</a>
         <a href="#"><span>📱</span> Bantuan</a>
-        <a href="#" onclick="logout()"><span>🚪</span> Logout</a>
+        <a href="#" class="logout-link"><span>🚪</span> Logout</a>
       </div>
 
         <div class="saldo-main-content">
-      <div class="saldo-container">
-        <h2>Kelola Saldo</h2>
-        <div class="saldo-card">
-          <div class="current-saldo">
-            <h3>Saldo Saat Ini</h3>
-            <p id="current-saldo-display">Rp 0</p>
-        </div>
-          <div class="topup-form">
-            <h3>Top Up Saldo</h3>
-            <div class="input-group">
-              <label for="amount">Jumlah Top Up</label>
-              <input type="text" id="amount" placeholder="Minimal Rp 10.000" inputmode="numeric" pattern="[0-9]*">
-      </div>
-      <div class="topup-methods">
-        <div class="method-card">
-          <div class="method-header">
-                  <div class="method-icon">📱</div>
-                  <div class="method-title">WhatsApp</div>
-          </div>
-          <ul class="method-steps">
-                  <li>Masukkan jumlah top up yang diinginkan</li>
-                  <li>Klik tombol "Top Up via WA"</li>
-                  <li>Anda akan diarahkan ke WhatsApp</li>
-                  <li>Kirim bukti pembayaran</li>
-          </ul>
-          <div class="contact-info">
-                  <span>Hubungi kami di:</span>
-                  <a href="https://wa.me/6281234567890" target="_blank">+62 812-3456-7890</a>
-          </div>
-        </div>
-        <div class="method-card">
-          <div class="method-header">
-            <div class="method-icon">💵</div>
-                  <div class="method-title">Cash</div>
-          </div>
-          <ul class="method-steps">
-                  <li>Masukkan jumlah top up yang diinginkan</li>
-                  <li>Klik tombol "Top Up Cash"</li>
-                  <li>Datang ke kantin</li>
-                  <li>Lakukan pembayaran di kasir</li>
-          </ul>
-          <div class="cash-info">
-                  <p>Lokasi: Kantin ITH Lt. 1</p>
+          <div class="saldo-container">
+            <h2>Kelola Saldo</h2>
+
+            <!-- Saldo Saat Ini card - full width -->
+            <div class="saldo-card saldo-overview-card">
+              <div class="current-saldo">
+                <h3>Saldo Saat Ini</h3>
+                <p id="current-saldo-display">Rp 0</p>
+              </div>
+            </div>
+
+            <!-- Container for side-by-side top-up options -->
+            <div class="topup-options-flex">
+              <div class="saldo-card method-card">
+                <div class="method-header">
+                  <div class="method-icon"><i class="uil uil-money-bill"></i></div>
+                  <h3 class="method-title">Ajukan Top Up Saldo<br/>(Transfer Bank/Dana)</h3>
+                </div>
+                <div class="topup-form">
+                  <div class="input-group">
+                    <label for="topupAmount">Jumlah Top Up</label>
+                    <div class="amount-options">
+                      <button type="button" class="amount-btn" data-amount="10000">Rp 10.000</button>
+                      <button type="button" class="amount-btn" data-amount="20000">Rp 20.000</button>
+                      <button type="button" class="amount-btn" data-amount="50000">Rp 50.000</button>
+                    </div>
+                    <div class="custom-amount">
+                      <input type="number" id="topupAmount" placeholder="Nominal lain" min="10000"/>
+                      <small>Minimal Rp 10.000</small>
+                    </div>
+                  </div>
+                  <div class="method-steps">
+                    <h4>Transfer ke rekening/Dana berikut:</h4>
+                    <p><strong>Bank:</strong> BCA</p>
+                    <p><strong>Nomor Rekening/Dana:</strong> 1234567890</p>
+                    <p><strong>Atas Nama:</strong> Kantin ITH</p>
+                    <p>Setelah mengajukan, mohon kirimkan bukti transfer Anda beserta nama pengguna dan jumlah top up ke nomor WhatsApp Admin: <a href="https://wa.me/6281234567890" target="_blank">+6281234567890</a> (klik untuk chat)</p>
+                  </div>
+                  <button onclick="sendTopupViaWhatsApp()" class="confirm-btn">Ajukan Top Up</button>
+                </div>
+              </div>
+              <div class="saldo-card method-card">
+                <div class="method-header">
+                  <div class="method-icon"><i class="uil uil-wallet"></i></div>
+                  <h3 class="method-title">Bayar di Tempat (Cash)</h3>
+                </div>
+                <ul class="method-steps">
+                  <li>Pilih nominal di atas pada form "Jumlah Top Up" atau sebutkan nominal yang diinginkan kepada kasir.</li>
+                  <li>Datang ke kantin untuk melakukan pembayaran di kasir.</li>
+                  <li><strong>Lokasi:</strong> Kantin ITH Lt. 1</li>
+                </ul>
+                <button onclick="topupCash()" class="confirm-btn">Konfirmasi Pembayaran Tunai</button>
+              </div>
+            </div>
+
+            <!-- Riwayat Top Up Section with traditional table -->
+            <div class="saldo-card history-card" style="margin-top: 30px; padding: 25px; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08); border-radius: 12px; background-color: #fff;">
+              <div class="method-header">
+                <div class="method-icon"><i class="uil uil-history"></i></div>
+                <h3 class="method-title">Riwayat Top Up</h3>
+              </div>
+              <div class="history-content" style="margin-top: 20px;">
+                <p id="no-history-message" style="display: none; text-align: center; color: #888;">Belum ada riwayat top up.</p>
+                <div class="table-responsive" style="width: 100%; overflow-x: auto;">
+                  <table class="history-table" id="topup-history-table" style="width: 100%; border-collapse: collapse; margin-top: 15px;">
+                    <thead>
+                      <tr>
+                        <th>ID</th>
+                        <th>Jumlah</th>
+                        <th>Waktu</th>
+                        <th>Status</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <!-- Riwayat top up akan dimuat di sini oleh JavaScript -->
+                    </tbody>
+                  </table>
                 </div>
               </div>
             </div>
-            <div class="topup-actions">
-              <button onclick="topupViaWA()" class="wa-btn">Top Up via WA <i class="fas fa-whatsapp"></i></button>
-              <button onclick="topupCash()" class="cash-btn">Top Up Cash <i class="fas fa-money-bill"></i></button>
-              </div>
+
           </div>
         </div>
       </div>
-      </div>
     </div>
-  </div>
 
-  <!-- Popup Sukses -->
-  <div class="success-popup" id="successPopup" style="display:none;">
+<div class="success-popup" id="successPopup" style="display:none;">
     <span class="success-icon">✅</span>
-    <span class="success-message">Top up berhasil!</span>
-      </div>
+    <span class="success-message">Permintaan top up berhasil diajukan! Menunggu konfirmasi admin.</span>
+</div>
 
-  <!-- Popup Error -->
   <div class="error-popup" id="errorPopup" style="display:none;">
     <span class="error-icon">❌</span>
     <span class="error-message" id="errorMessage"></span>
   </div>
 
-  <!-- Panel Logout -->
-  <div class="popup-overlay" id="logoutPopup" style="display:none;">
+  <div class="popup-overlay" id="logoutPopup">
     <div class="popup-box">
       <div class="popup-header">
         <h3>Konfirmasi Logout</h3>
@@ -139,13 +163,12 @@
         </p>
         <div class="checkout-actions">
           <button class="cancel-btn" onclick="closePopup('logoutPopup')">Batal</button>
-          <button class="confirm-btn" onclick="confirmLogout()">Logout</button>
+          <button class="confirm-btn" onclick="confirmLogout()">Ya, Keluar</button>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- PROFILE POPUP -->
   <div class="popup-overlay" id="profileInfoPopup" style="display:none;">
     <div class="popup-box">
       <div class="popup-header">
@@ -169,8 +192,8 @@
     </div>
   </div>
 
+  <script src="../js/buyer_common.js"></script>
   <script>
-    // Check if user is logged in
     document.addEventListener('DOMContentLoaded', () => {
       const userId = localStorage.getItem('loggedInUserId');
       if (!userId) {
@@ -178,7 +201,6 @@
         return;
       }
 
-      // Update profile name
       const profileNameElement = document.querySelector('.profile-name');
       if (profileNameElement) {
         const loggedInUsername = localStorage.getItem('loggedInUsername') || '';
@@ -186,6 +208,15 @@
       }
 
       updateSaldo();
+      loadTopupHistory();
+
+      // Menambahkan event listener untuk tombol nominal
+      document.querySelectorAll('.amount-btn').forEach(button => {
+        button.addEventListener('click', (e) => {
+          const amount = e.target.dataset.amount;
+          document.getElementById('topupAmount').value = amount;
+        });
+      });
     });
 
     function updateSaldo() {
@@ -200,145 +231,131 @@
       .then(response => response.json())
       .then(data => {
         if (data && typeof data.saldo === 'number') {
-          const formattedSaldo = new Intl.NumberFormat('id-ID').format(data.saldo);
+          const formattedSaldo = data.saldo;
           document.getElementById('saldo').textContent = `Rp ${formattedSaldo}`;
           document.getElementById('current-saldo-display').textContent = `Rp ${formattedSaldo}`;
         }
       })
       .catch(error => {
         console.error('Error fetching saldo:', error);
-        showError('Gagal mengambil data saldo');
+        showError('Gagal memuat saldo.');
       });
     }
 
-    function topupViaWA() {
-      let amountString = document.getElementById('amount').value;
-      
-      amountString = amountString.replace(/[^0-9]/g, '');
+    async function loadTopupHistory() {
+      const userId = localStorage.getItem('loggedInUserId');
+      if (!userId) return;
 
-      const amount = parseInt(amountString, 10);
+      try {
+        const response = await fetch(`../backend/topup_request_handler.php?action=get_topup_history&userId=${userId}`);
+        const data = await response.json();
 
-      if (isNaN(amount) || amount < 10000) {
-        showError('Jumlah top up minimal Rp 10.000');
-        return;
+        const historyTableBody = document.getElementById('topup-history-table').querySelector('tbody');
+        const noHistoryMessage = document.getElementById('no-history-message');
+
+        historyTableBody.innerHTML = '';
+
+        if (data.status === 'success' && data.data.length > 0) {
+          noHistoryMessage.style.display = 'none';
+          data.data.forEach(item => {
+            const row = historyTableBody.insertRow();
+            row.insertCell(0).textContent = item.id;
+            row.insertCell(1).textContent = `Rp ${parseInt(item.jumlah).toLocaleString('id-ID')}`;
+            const date = new Date(item.created_at);
+            row.insertCell(2).textContent = date.toLocaleDateString('id-ID', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+            
+            const statusCell = row.insertCell(3);
+            let statusText = item.status;
+            let statusClass = '';
+
+            switch(item.status) {
+                case 'menunggu':
+                    statusText = 'Menunggu Konfirmasi';
+                    statusClass = 'status-pending';
+                    break;
+                case 'disetujui':
+                    statusText = 'Dikonfirmasi';
+                    statusClass = 'status-approved';
+                    break;
+                case 'ditolak':
+                    statusText = 'Ditolak';
+                    statusClass = 'status-rejected';
+                    break;
+                default:
+                    statusText = item.status;
+                    break;
+            }
+            
+            statusCell.textContent = statusText;
+            statusCell.className = statusClass;
+          });
+        } else {
+          noHistoryMessage.style.display = 'block';
+        }
+      } catch (error) {
+        console.error('Error loading top-up history:', error);
+        showError('Gagal memuat riwayat top up.');
+        document.getElementById('no-history-message').style.display = 'block';
       }
-      
-      const formattedAmount = new Intl.NumberFormat('id-ID').format(amount);
-      const message = `Halo, saya ingin top up saldo sebesar Rp ${formattedAmount}`;
-      const waLink = `https://wa.me/6281234567890?text=${encodeURIComponent(message)}`;
-      window.open(waLink, '_blank');
-    }
-
-    function topupCash() {
-      let amountString = document.getElementById('amount').value;
-
-      amountString = amountString.replace(/[^0-9]/g, '');
-
-      const amount = parseInt(amountString, 10);
-
-      if (isNaN(amount) || amount < 10000) {
-        showError('Jumlah top up minimal Rp 10.000');
-        return;
-      }
-      
-      showSuccess('Silahkan datang ke kantin untuk melakukan pembayaran secara tunai sebesar Rp ' + new Intl.NumberFormat('id-ID').format(amount));
-    }
-
-    function showSuccess(message = 'Top up berhasil!') {
-      const popup = document.getElementById('successPopup');
-      const messageElement = popup.querySelector('.success-message');
-      messageElement.textContent = message;
-      popup.style.display = 'flex';
-      setTimeout(() => {
-        popup.style.display = 'none';
-      }, 3000);
     }
 
     function showError(message) {
-      const popup = document.getElementById('errorPopup');
-      const messageElement = document.getElementById('errorMessage');
-      messageElement.textContent = message;
-      popup.style.display = 'flex';
+      const errorPopup = document.getElementById('errorPopup');
+      const errorMessageElement = document.getElementById('errorMessage');
+      errorMessageElement.textContent = message;
+      errorPopup.style.display = 'flex';
       setTimeout(() => {
-        popup.style.display = 'none';
-      }, 3000);
+        errorPopup.style.display = 'none';
+      }, 5000);
     }
 
-    function logout() {
-      const logoutUserName = document.getElementById('logoutUserName');
-      const logoutUserRole = document.getElementById('logoutUserRole');
-      const logoutPopup = document.getElementById('logoutPopup');
-
-      // Menggunakan kunci yang konsisten dengan yang digunakan saat login
-      const loggedInUsername = localStorage.getItem('loggedInUsername') || '';
-      const loggedInUserRole = localStorage.getItem('loggedInUserRole') || '';
-
-      if (logoutUserName) logoutUserName.textContent = loggedInUsername;
-      if (logoutUserRole) logoutUserRole.textContent = loggedInUserRole;
-      if (logoutPopup) logoutPopup.style.display = 'flex';
+    function showSuccess(message) {
+      const successPopup = document.getElementById('successPopup');
+      const successMessageElement = successPopup.querySelector('.success-message');
+      successMessageElement.textContent = message;
+      successPopup.style.display = 'flex';
+      setTimeout(() => {
+        successPopup.style.display = 'none';
+      }, 5000);
     }
 
-    function confirmLogout() {
-      localStorage.clear();
-      window.location.href = "../index.html";
+    function toggleProfile() {
+      const profileDropdown = document.getElementById('profileDropdown');
+      profileDropdown.classList.toggle('active');
     }
+
+    function tambahSaldo() {
+      window.location.href = 'saldo.html';
+    }
+
+    function updateKeranjangBadge() {
+      const keranjang = JSON.parse(localStorage.getItem('keranjang') || '[]');
+      const badgeElement = document.getElementById('keranjang-badge');
+      if (badgeElement) {
+        badgeElement.textContent = keranjang.length;
+      }
+    }
+
+    updateKeranjangBadge();
 
     function closePopup(popupId) {
-      const popup = document.getElementById(popupId);
-      if (popup) {
-        popup.style.display = 'none';
-      }
+      document.getElementById(popupId).style.display = 'none';
     }
 
-    // Close popup when clicking outside
-    window.onclick = function(event) {
-      if (event.target.classList.contains('popup-overlay')) {
-        event.target.style.display = 'none';
-      }
-    }
-
-    // Fungsi untuk toggle profile dropdown
-    function toggleProfile() {
-      const dropdown = document.getElementById("profileDropdown");
-      dropdown.classList.toggle("active");
-    }
-
-    // Fungsi untuk menampilkan profil
     function showProfileInfoPopup() {
-      console.log('Showing profile info popup');
-      // Tutup dropdown terlebih dahulu
-      const profileDropdown = document.getElementById("profileDropdown");
-      if (profileDropdown) profileDropdown.classList.remove("active");
-
-      // Ambil data user dari localStorage
-      const username = localStorage.getItem('loggedInUsername') || 'Pengguna KantinITH';
-      const role = localStorage.getItem('loggedInUserRole') || 'Pembeli';
-
-      // Isi data profil
+      const profileInfoPopup = document.getElementById('profileInfoPopup');
       const profileInfoUserName = document.getElementById('profileInfoUserName');
       const profileInfoUserRole = document.getElementById('profileInfoUserRole');
-      const profileInfoPopup = document.getElementById('profileInfoPopup');
+      const profileInfoEmail = document.getElementById('profileInfoEmail');
+      const profileInfoPhone = document.getElementById('profileInfoPhone');
 
-      if (profileInfoUserName) profileInfoUserName.textContent = username;
-      if (profileInfoUserRole) profileInfoUserRole.textContent = role;
-      if (profileInfoPopup) profileInfoPopup.style.display = 'flex';
+      profileInfoUserName.textContent = localStorage.getItem('loggedInUsername') || 'N/A';
+      profileInfoUserRole.textContent = localStorage.getItem('loggedInUserRole') || 'N/A';
+      profileInfoEmail.textContent = localStorage.getItem('loggedInUserEmail') || 'Belum Tersedia';
+      profileInfoPhone.textContent = localStorage.getItem('loggedInUserPhone') || 'Belum Tersedia';
 
-      console.log('Profile info popup displayed with data:', {username, role});
+      profileInfoPopup.style.display = 'flex';
     }
-
-    // Update profile dropdown click handler
-    document.addEventListener('DOMContentLoaded', () => {
-      const profileDropdown = document.getElementById('profileDropdown');
-      if (profileDropdown) {
-        const profileLink = profileDropdown.querySelector('a:first-child');
-        if (profileLink) {
-          profileLink.onclick = function(e) {
-            e.preventDefault();
-            showProfileInfoPopup();
-          };
-        }
-      }
-    });
   </script>
 </body>
-</html> 
+</html>
