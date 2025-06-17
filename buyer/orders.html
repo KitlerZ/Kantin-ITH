@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Orders - Kantin ITH</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <div class="layout">
+        <aside class="sidebar">
+
+        </aside>
+        <div class="main-content">
+            <header class="header">
+                <h1>My Orders</h1>
+                <div class="header-actions">
+                    <a href="menu.html" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left"></i> Back to Menu
+                    </a>
+                </div>
+            </header>
+
+            <div class="message" id="message"></div>
+
+            <div class="orders-container">
+                <div class="orders-filters">
+                    <select id="statusFilter" class="form-control">
+                        <option value="">All Orders</option>
+                        <option value="pending">Pending</option>
+                        <option value="processing">Processing</option>
+                        <option value="completed">Completed</option>
+                        <option value="cancelled">Cancelled</option>
+                    </select>
+                </div>
+
+                <div class="orders-list" id="ordersList">
+                </div>
+            </div>
+            <div class="modal" id="orderDetailsModal">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h2>Order Details</h2>
+                        <button class="close-btn" onclick="closeModal()">&times;</button>
+                    </div>
+                    <div class="modal-body" id="orderDetailsContent">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const userData = JSON.parse(localStorage.getItem('userData'));
+        if (!userData || !userData.id) {
+            window.location.href = '../index.html';
+        }
+
+        function formatCurrency(amount) {
+            return new Intl.NumberFormat('id-ID', {
+                style: 'currency',
+                currency: 'IDR'
+            }).format(amount);
+        }
+        function formatDate(dateString) {
+            const options = {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            };
+            return new Date(dateString).toLocaleDateString('id-ID', options);
+        }
+
+        // Show message
+        function showMessage(message, type = 'error') {
+            const messageDiv = document.getElementById('message');
+            messageDiv.textContent = message;
+            messageDiv.className = `message ${type}`;
+            messageDiv.style.display = 'block';
+            setTimeout(() => {
+                messageDiv.style.display = 'none';
+            }, 3000);
+        }
+        async function loadOrders(status = '') {
+            try {
+                const response = await fetch('../backend/orders.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        action: 'get_orders',
+                        user_id: userData.id,
+                        status: status
+                    })
+                });
+
+                const data = await response.json();
+                if (data.status === 'success') {
+                    displayOrders(data.orders);
+                } else {
+                    showMessage(data.message);
+                }
+            } catch (error) {
+                showMessage('Failed to load orders');
+            }
+        }
+
+        // Display orders
+        function displayOrders(orders) {
+            const ordersList = document.getElementById('ordersList');
+            ordersList.innerHTML = '';
+
+            if (orders.length === 0) {
+                ordersList.innerHTML = '<p class="no-data">No orders found</p>';
+                return;
+            }
+
+            orders.forEach(order => {
+                const orderCard = document.createElement('div');
+                orderCard.className = `order-card ${order.status}`;
+                orderCard.innerHTML = `
+                    <div class="order-header">
+                        <h3>Order #${order.id}</h3>
+                        <span class="status-badge ${order.status}">${order.status}</span>
+                    </div>
+                    <div class="order-info">
+                        <p><strong>Date:</strong> ${formatDate(order.created_at)}</p>
+                        <p><strong>Total:</strong> ${formatCurrency(order.total_amount)}</p>
+                        <p><strong>Items:</strong> ${order.items}</p>
+                    </div>
+                    <button class="btn btn-primary" onclick="viewOrderDetails(${order.id})">
+                        View Details
+                    </button>
+                `;
+                ordersList.appendChild(orderCard);
+            });
+        }
+
+        // View order details
+        async function viewOrderDetails(orderId) {
+            try {
+                const response = await fetch('../backend/orders.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        action: 'get_order_details',
+                        order_id: orderId
+                    })
+                });
+
+                const data = await response.json();
+                if (data.status === 'success') {
+                    displayOrderDetails(data.order);
+                } else {
+                    showMessage(data.message);
+                }
+            } catch (error) {
+                showMessage('Failed to load order details');
+            }
+        }
+
+        // Display order details
+        function displayOrderDetails(order) {
+            const modal = document.getElementById('orderDetailsModal');
+            const content = document.getElementById('orderDetailsContent');
+            
+            content.innerHTML = `
+                <div class="order-details">
+                    <div class="detail-row">
+                        <span>Order ID:</span>
+                        <span>#${order.id}</span>
+                    </div>
+                    <div class="detail-row">
+                        <span>Date:</span>
+                        <span>${formatDate(order.created_at)}</span>
+                    </div>
+                    <div class="detail-row">
+                        <span>Status:</span>
+                        <span class="status-badge ${order.status}">${order.status}</span>
+                    </div>
+                    <div class="detail-row">
+                        <span>Total Amount:</span>
+                        <span>${formatCurrency(order.total_amount)}</span>
+                    </div>
+                    
+                    <h3>Order Items</h3>
+                    <div class="order-items">
+                        ${order.items.map(item => `
+                            <div class="order-item">
+                                <div class="item-info">
+                                    <span class="item-name">${item.menu_name}</span>
+                                    <span class="item-quantity">x${item.quantity}</span>
+                                </div>
+                                <div class="item-price">
+                                    <span>${formatCurrency(item.price)}</span>
+                                    <span class="subtotal">${formatCurrency(item.subtotal)}</span>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+            
+            modal.style.display = 'block';
+        }
+
+        // Close modal
+        function closeModal() {
+            const modal = document.getElementById('orderDetailsModal');
+            modal.style.display = 'none';
+        }
+
+        // Event listeners
+        document.getElementById('statusFilter').addEventListener('change', (e) => {
+            loadOrders(e.target.value);
+        });
+
+        // Close modal when clicking outside
+        window.onclick = function(event) {
+            const modal = document.getElementById('orderDetailsModal');
+            if (event.target === modal) {
+                closeModal();
+            }
+        }
+
+        // Initial load
+        loadOrders();
+    </script>
+</body>
+</html> 
