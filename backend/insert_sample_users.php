@@ -4,10 +4,9 @@ include 'db.php';
 header('Content-Type: application/json');
 
 try {
-    // Hapus data lama (opsional)
+
     $conn->query("TRUNCATE TABLE users");
     
-    // Data pengguna contoh
     $users = [
         [
             'username' => 'admin1',
@@ -29,7 +28,7 @@ try {
         ]
     ];
     
-    // Insert data pengguna
+
     $stmt = $conn->prepare("INSERT INTO users (username, password, role, saldo) VALUES (?, ?, ?, ?)");
     
     foreach ($users as $user) {

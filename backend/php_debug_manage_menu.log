@@ -1,0 +1,128 @@
+
+---2025-06-17 17:13:00---
+_POST: Array
+(
+    [action] => get_all
+    [userId] => 2
+)
+
+_FILES: Array
+(
+)
+
+
+---2025-06-17 17:27:24---
+_POST: Array
+(
+    [action] => get_all
+    [userId] => 2
+)
+
+_FILES: Array
+(
+)
+
+
+---2025-06-17 17:27:48---
+_POST: Array
+(
+    [action] => add_menu
+    [nama] => tes
+    [harga] => 1
+    [kategori] => Makanan
+    [stok] => 1
+    [status] => Ready
+    [userId] => 2
+)
+
+_FILES: Array
+(
+    [gambar] => Array
+        (
+            [name] => Light_Pink_and_Purple_Dahlia_PLT-FL-DH-1.jpg
+            [full_path] => Light_Pink_and_Purple_Dahlia_PLT-FL-DH-1.jpg
+            [type] => image/jpeg
+            [tmp_name] => D:\xampp\tmp\php6EB5.tmp
+            [error] => 0
+            [size] => 17685
+        )
+
+)
+
+
+---2025-06-17 17:27:49---
+_POST: Array
+(
+    [action] => get_all
+    [userId] => 2
+)
+
+_FILES: Array
+(
+)
+
+
+---2025-06-17 17:27:55---
+_POST: Array
+(
+    [action] => update_menu
+    [id] => 29
+    [nama] => tes
+    [harga] => 1.00
+    [kategori] => Makanan
+    [stok] => 11
+    [status] => Ready
+)
+
+_FILES: Array
+(
+)
+
+
+---2025-06-17 17:27:57---
+_POST: Array
+(
+    [action] => get_all
+    [userId] => 2
+)
+
+_FILES: Array
+(
+)
+
+
+---2025-06-17 17:28:01---
+_POST: Array
+(
+    [action] => delete_menu
+    [id] => 29
+)
+
+_FILES: Array
+(
+)
+
+
+---2025-06-17 17:28:02---
+_POST: Array
+(
+    [action] => get_all
+    [userId] => 2
+)
+
+_FILES: Array
+(
+)
+
+
+---2025-06-17 17:28:47---
+_POST: Array
+(
+    [action] => get_all
+    [userId] => 2
+)
+
+_FILES: Array
+(
+)
+

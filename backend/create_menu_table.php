@@ -4,13 +4,17 @@ include 'db.php';
 header('Content-Type: application/json');
 
 try {
-    // Buat tabel menu jika belum ada
+ 
     $sql = "CREATE TABLE IF NOT EXISTS menu (
         id INT AUTO_INCREMENT PRIMARY KEY,
         nama VARCHAR(100) NOT NULL,
         harga INT NOT NULL,
         kategori VARCHAR(50) NOT NULL,
-        status VARCHAR(20) NOT NULL DEFAULT 'Ready'
+        stok INT NOT NULL DEFAULT 0,
+        status VARCHAR(20) NOT NULL DEFAULT 'Ready',
+        penjual_id INT NOT NULL,
+        gambar VARCHAR(255),
+        FOREIGN KEY (penjual_id) REFERENCES users(id)
     )";
     
     if ($conn->query($sql) === TRUE) {

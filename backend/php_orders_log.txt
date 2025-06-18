@@ -1,0 +1,147 @@
+
+---2025-06-17 17:12:37---
+Raw Input: {"action":"get_order_history","userId":"1"}
+Decoded Data: Array
+(
+    [action] => get_order_history
+    [userId] => 1
+)
+
+Action received: get_order_history
+
+---2025-06-17 17:13:06---
+Raw Input: {"action":"get_seller_orders","userId":"2","filterStatus":"all"}
+Decoded Data: Array
+(
+    [action] => get_seller_orders
+    [userId] => 2
+    [filterStatus] => all
+)
+
+Action received: get_seller_orders
+
+---2025-06-17 17:13:06---
+Raw Input: {"action":"get_seller_orders","userId":"2","filterStatus":"all"}
+Decoded Data: Array
+(
+    [action] => get_seller_orders
+    [userId] => 2
+    [filterStatus] => all
+)
+
+Action received: get_seller_orders
+
+---2025-06-17 17:26:28---
+Raw Input: {"action":"get_order_history","userId":"1"}
+Decoded Data: Array
+(
+    [action] => get_order_history
+    [userId] => 1
+)
+
+Action received: get_order_history
+
+---2025-06-17 17:28:05---
+Raw Input: {"action":"get_seller_orders","userId":"2","filterStatus":"all"}
+Decoded Data: Array
+(
+    [action] => get_seller_orders
+    [userId] => 2
+    [filterStatus] => all
+)
+
+Action received: get_seller_orders
+
+---2025-06-17 17:28:05---
+Raw Input: {"action":"get_seller_orders","userId":"2","filterStatus":"all"}
+Decoded Data: Array
+(
+    [action] => get_seller_orders
+    [userId] => 2
+    [filterStatus] => all
+)
+
+Action received: get_seller_orders
+
+---2025-06-17 17:28:12---
+Raw Input: {"action":"update_order_status","orderId":"59","newStatus":"Diproses"}
+Decoded Data: Array
+(
+    [action] => update_order_status
+    [orderId] => 59
+    [newStatus] => Diproses
+)
+
+Action received: update_order_status
+
+---2025-06-17 17:28:14---
+Raw Input: {"action":"get_seller_orders","userId":"2","filterStatus":"all"}
+Decoded Data: Array
+(
+    [action] => get_seller_orders
+    [userId] => 2
+    [filterStatus] => all
+)
+
+Action received: get_seller_orders
+
+---2025-06-17 17:28:23---
+Raw Input: {"action":"update_order_status","orderId":"58","newStatus":"Selesai"}
+Decoded Data: Array
+(
+    [action] => update_order_status
+    [orderId] => 58
+    [newStatus] => Selesai
+)
+
+Action received: update_order_status
+
+=== Processing Order #58 ===
+Order Data:
+Total Harga: 3000.00
+Pembeli ID: 1
+Penjual ID: 2
+Calculations:
+Admin Commission (5%): 150
+Seller Amount (95%): 2850
+Admin Found:
+ID: 4
+Username: admin1
+Current Saldo: 4121.00
+Successfully updated admin saldo
+New admin saldo: 4271.00
+Successfully updated seller saldo
+Successfully inserted both transactions
+
+---2025-06-17 17:28:25---
+Raw Input: {"action":"get_seller_orders","userId":"2","filterStatus":"all"}
+Decoded Data: Array
+(
+    [action] => get_seller_orders
+    [userId] => 2
+    [filterStatus] => all
+)
+
+Action received: get_seller_orders
+
+---2025-06-17 17:28:44---
+
+---2025-06-17 17:28:44---
+Raw Input: {"action":"get_seller_orders","userId":"2","filterStatus":"all"}
+Raw Input: {"action":"get_seller_orders","userId":"2","filterStatus":"all"}
+Decoded Data: Array
+(
+    [action] => get_seller_orders
+    [userId] => 2
+    [filterStatus] => all
+)
+
+Action received: get_seller_orders
+Decoded Data: Array
+(
+    [action] => get_seller_orders
+    [userId] => 2
+    [filterStatus] => all
+)
+
+Action received: get_seller_orders

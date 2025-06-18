@@ -1,170 +1,153 @@
 <?php
+ob_start(); // Start output buffering
 header('Content-Type: application/json');
-require_once 'db.php';
 
-// Fungsi untuk mendapatkan semua pengguna
-function getAllUsers($conn) {
-    $query = "SELECT id, username, password, role, saldo FROM users";
-    $result = mysqli_query($conn, $query);
-    
-    if (!$result) {
-        return ['status' => 'error', 'message' => 'Gagal mengambil data pengguna: ' . mysqli_error($conn)];
-    }
+include_once 'db.php';
 
-    $users = [];
-    while ($row = mysqli_fetch_assoc($result)) {
-        $users[] = $row;
-    }
+// $conn is already established by db.php
 
-    return ['status' => 'success', 'users' => $users];
-}
+$raw_input = file_get_contents('php://input');
+error_log("Admin Manage Users - Raw input: " . $raw_input); // Log raw input
+$input = json_decode($raw_input, true);
+$action = $input['action'] ?? '';
 
-// Fungsi untuk mendapatkan detail pengguna
-function getUserDetails($conn, $userId) {
-    $query = "SELECT id, username, password, role, saldo FROM users WHERE id = ?";
-    $stmt = mysqli_prepare($conn, $query);
-    mysqli_stmt_bind_param($stmt, "i", $userId);
-    mysqli_stmt_execute($stmt);
-    $result = mysqli_stmt_get_result($stmt);
-    
-    if (!$result) {
-        return ['status' => 'error', 'message' => 'Gagal mengambil detail pengguna: ' . mysqli_error($conn)];
-    }
+error_log("Admin Manage Users - Parsed action: " . $action); // Log parsed action
+error_log("Admin Manage Users - Full input data: " . print_r($input, true)); // Log full input array
 
-    $user = mysqli_fetch_assoc($result);
-    if (!$user) {
-        return ['status' => 'error', 'message' => 'Pengguna tidak ditemukan'];
-    }
-
-    return ['status' => 'success', 'user' => $user];
-}
-
-// Fungsi untuk memperbarui pengguna
-function updateUser($conn, $userId, $username, $role, $password = null, $saldo = null) {
-    $query = "UPDATE users SET username = ?, role = ?";
-    $params = [$username, $role];
-    $types = "ss";
-
-    if ($password !== null) {
-        $query .= ", password = ?";
-        $params[] = $password;
-        $types .= "s";
-    }
-
-    if ($saldo !== null) {
-        $query .= ", saldo = ?";
-        $params[] = $saldo;
-        $types .= "d";
-    }
-
-    $query .= " WHERE id = ?";
-    $params[] = $userId;
-    $types .= "i";
-
-    $stmt = mysqli_prepare($conn, $query);
-    mysqli_stmt_bind_param($stmt, $types, ...$params);
-    
-    if (!mysqli_stmt_execute($stmt)) {
-        return ['status' => 'error', 'message' => 'Gagal memperbarui pengguna: ' . mysqli_error($conn)];
-    }
-
-    return ['status' => 'success', 'message' => 'Pengguna berhasil diperbarui'];
-}
-
-// Fungsi untuk menghapus pengguna
-function deleteUser($conn, $userId) {
-    $query = "DELETE FROM users WHERE id = ?";
-    $stmt = mysqli_prepare($conn, $query);
-    mysqli_stmt_bind_param($stmt, "i", $userId);
-    
-    if (!mysqli_stmt_execute($stmt)) {
-        return ['status' => 'error', 'message' => 'Gagal menghapus pengguna: ' . mysqli_error($conn)];
-    }
-
-    return ['status' => 'success', 'message' => 'Pengguna berhasil dihapus'];
-}
-
-// Fungsi untuk menambah pengguna baru
-function addUser($conn, $username, $password, $role, $saldo = 0) {
-    $query = "INSERT INTO users (username, password, role, saldo) VALUES (?, ?, ?, ?)";
-    $stmt = mysqli_prepare($conn, $query);
-    mysqli_stmt_bind_param($stmt, "sssd", $username, $password, $role, $saldo);
-    
-    if (!mysqli_stmt_execute($stmt)) {
-        return ['status' => 'error', 'message' => 'Gagal menambah pengguna: ' . mysqli_error($conn)];
-    }
-
-    return ['status' => 'success', 'message' => 'Pengguna berhasil ditambahkan'];
-}
-
-// Handle request
-$data = json_decode(file_get_contents('php://input'), true);
-$action = $data['action'] ?? '';
+$response = ['status' => 'error', 'message' => 'Aksi tidak valid.'];
 
 try {
     switch ($action) {
         case 'get_all_users':
-            echo json_encode(getAllUsers($conn));
+            $response = getAllUsers($conn);
             break;
-        
-        case 'get_user_details':
-            $userId = $data['user_id'] ?? 0;
-            echo json_encode(getUserDetails($conn, $userId));
-            break;
-        
-        case 'update_user':
-            $userId = $data['user_id'] ?? 0;
-            $username = $data['username'] ?? '';
-            $role = $data['role'] ?? '';
-            $password = $data['password'] ?? null;
-            $saldo = $data['saldo'] ?? null;
-            echo json_encode(updateUser($conn, $userId, $username, $role, $password, $saldo));
-            break;
-        
-        case 'delete_user':
-            $userId = $data['user_id'] ?? 0;
-            echo json_encode(deleteUser($conn, $userId));
-            break;
-        
         case 'add_user':
-            // Validasi input
-            if (empty($data['username']) || empty($data['password']) || empty($data['role'])) {
-                throw new Exception('Username, password, dan role harus diisi');
-            }
-
-            // Cek apakah username sudah ada
-            $stmt = $conn->prepare("SELECT id FROM users WHERE username = ?");
-            $stmt->bind_param("s", $data['username']);
-            $stmt->execute();
-            $result = $stmt->get_result();
-            
-            if ($result->num_rows > 0) {
-                throw new Exception('Username sudah digunakan');
-            }
-
-            // Hash password
-            $hashedPassword = password_hash($data['password'], PASSWORD_DEFAULT);
-            
-            // Set saldo default untuk admin
-            $saldo = ($data['role'] === 'admin') ? 0 : ($data['saldo'] ?? 0);
-
-            // Insert user baru
-            $stmt = $conn->prepare("INSERT INTO users (username, password, role, saldo) VALUES (?, ?, ?, ?)");
-            $stmt->bind_param("sssd", $data['username'], $hashedPassword, $data['role'], $saldo);
-            
-            if ($stmt->execute()) {
-                echo json_encode(['success' => true, 'message' => 'Pengguna berhasil ditambahkan']);
-            } else {
-                throw new Exception('Gagal menambahkan pengguna');
-            }
+            $response = add_user($conn);
             break;
-        
+        case 'get_user_details':
+            $response = get_user_details($conn);
+            break;
+        case 'update_user':
+            $response = update_user($conn);
+            break;
+        case 'delete_user':
+            $response = delete_user($conn);
+            break;
         default:
-            throw new Exception('Aksi tidak valid');
+            // Default error message already set
+            break;
     }
 } catch (Exception $e) {
-    echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+    error_log("Exception in admin_manage_users.php: " . $e->getMessage());
+    $response = ['status' => 'error', 'message' => 'Terjadi kesalahan internal: ' . $e->getMessage()];
 }
 
-mysqli_close($conn);
+ob_end_clean(); // Clear any accidental output before sending JSON
+echo json_encode($response);
+exit; // Ensure no further output
+
+function getAllUsers($conn) {
+    $sql = "SELECT id, username, role, saldo FROM users";
+    $stmt = $conn->prepare($sql);
+    $stmt->execute();
+    $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+    return ['status' => 'success', 'users' => $users];
+}
+
+function add_user($conn) {
+    $data = json_decode(file_get_contents('php://input'), true);
+    $username = $data['username'] ?? '';
+    $password = $data['password'] ?? '';
+    $role = $data['role'] ?? '';
+    $saldo = $data['saldo'] ?? 0; // Get saldo from input, default to 0
+
+    error_log("add_user function - Received username: " . $username . ", role: " . $role . ", saldo: " . $saldo); // Log values
+
+    if (empty($username) || empty($password) || empty($role)) {
+        return ['status' => 'error', 'message' => 'Username, password, dan role harus diisi.'];
+    }
+
+    // Check if username already exists
+    $stmt = $conn->prepare("SELECT id FROM users WHERE username = ?");
+    $stmt->execute([$username]);
+    $existingUser = $stmt->fetch(PDO::FETCH_ASSOC);
+    if ($existingUser) {
+        return ['status' => 'error', 'message' => 'Username sudah ada.'];
+    }
+
+    $hashed_password = md5($password);
+
+    $sql = "INSERT INTO users (username, password, role, saldo) VALUES (?, ?, ?, ?)";
+    $stmt = $conn->prepare($sql);
+    if ($stmt->execute([$username, $hashed_password, $role, $saldo])) {
+        return ['status' => 'success', 'message' => 'Pengguna berhasil ditambahkan.'];
+    } else {
+        return ['status' => 'error', 'message' => 'Gagal menambahkan pengguna: ' . $stmt->errorInfo()[2]];
+    }
+}
+
+function get_user_details($conn) {
+    $data = json_decode(file_get_contents('php://input'), true);
+    $userId = $data['userId'] ?? 0;
+
+    $sql = "SELECT id, username, role, saldo FROM users WHERE id = ?";
+    $stmt = $conn->prepare($sql);
+    $stmt->execute([$userId]);
+    $user = $stmt->fetch(PDO::FETCH_ASSOC);
+
+    if ($user) {
+        return ['status' => 'success', 'user' => $user];
+    } else {
+        return ['status' => 'error', 'message' => 'Pengguna tidak ditemukan.'];
+    }
+}
+
+function update_user($conn) {
+    $data = json_decode(file_get_contents('php://input'), true);
+    $userId = $data['userId'] ?? 0;
+    $username = $data['username'] ?? '';
+    $role = $data['role'] ?? '';
+    $saldo = $data['saldo'] ?? null;
+    $password = $data['password'] ?? null;
+
+    $sql = "UPDATE users SET username = ?, role = ?";
+    $params = [$username, $role];
+
+    if ($saldo !== null) {
+        $sql .= ", saldo = ?";
+        $params[] = $saldo;
+    }
+    if ($password !== null && !empty($password)) {
+        $hashed_password = md5($password);
+        $sql .= ", password = ?";
+        $params[] = $hashed_password;
+    }
+
+    $sql .= " WHERE id = ?";
+    $params[] = $userId;
+
+    $stmt = $conn->prepare($sql);
+    if ($stmt->execute($params)) {
+        return ['status' => 'success', 'message' => 'Pengguna berhasil diperbarui.'];
+    } else {
+        return ['status' => 'error', 'message' => 'Gagal memperbarui pengguna: ' . $stmt->errorInfo()[2]];
+    }
+}
+
+function delete_user($conn) {
+    $data = json_decode(file_get_contents('php://input'), true);
+    $userId = $data['userId'] ?? 0;
+
+    $sql = "DELETE FROM users WHERE id = ?";
+    $stmt = $conn->prepare($sql);
+    if ($stmt->execute([$userId])) {
+        return ['status' => 'success', 'message' => 'Pengguna berhasil dihapus.'];
+    } else {
+        return ['status' => 'error', 'message' => 'Gagal menghapus pengguna: ' . $stmt->errorInfo()[2]];
+    }
+}
+
+$conn->close();
+
 ?> 

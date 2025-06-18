@@ -3,26 +3,47 @@ ob_start();
 ini_set('display_errors', 1);
 error_reporting(E_ALL);
 
-header("Content-Type: application/json");
+// Debugging: Log POST and FILES data
+file_put_contents('php_debug_manage_menu.log', "\n---" . date('Y-m-d H:i:s') . "---\n", FILE_APPEND);
+file_put_contents('php_debug_manage_menu.log', "_POST: " . print_r($_POST, true) . "\n", FILE_APPEND);
+file_put_contents('php_debug_manage_menu.log', "_FILES: " . print_r($_FILES, true) . "\n", FILE_APPEND);
+
+// header("Content-Type: application/json"); // Commented out to allow FormData to be parsed correctly
+header("Access-Control-Allow-Origin: *");
+header("Access-Control-Allow-Methods: POST, GET, OPTIONS");
+header("Access-Control-Allow-Headers: Content-Type");
+
+if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+    http_response_code(200);
+    exit();
+}
+
 include 'db.php';
 
-$input = file_get_contents("php://input");
-$data = json_decode($input, true);
+if (!isset($conn) || !$conn) {
+    ob_clean();
+    echo json_encode(['status' => 'error', 'message' => 'Koneksi database gagal.']);
+    exit;
+}
 
-$action = $data['action'] ?? '';
+$action = $_POST['action'] ?? '';
 
 try {
+    $uploadDir = '../aset/menu_images/';
+    if (!is_dir($uploadDir)) {
+        mkdir($uploadDir, 0777, true);
+    }
+
     switch ($action) {
         case 'get_all':
-            // Logic to fetch all menu items
-            $sql = "SELECT id, nama, harga, kategori, stok, status FROM menu ORDER BY id DESC";
-            $result = $conn->query($sql);
+            $userId = $_POST['userId'] ?? null;
+            $sql = "SELECT id, nama, harga, kategori, stok, status, gambar FROM menu WHERE penjual_id = ? ORDER BY id DESC";
+            $stmt = $conn->prepare($sql);
+            $stmt->execute([$userId]);
             
             $menuItems = [];
-            if ($result->num_rows > 0) {
-                while($row = $result->fetch_assoc()) {
-                    $menuItems[] = $row;
-                }
+            if ($stmt) {
+                $menuItems = $stmt->fetchAll(PDO::FETCH_ASSOC);
             }
             
             ob_end_clean();
@@ -30,72 +51,128 @@ try {
             break;
 
         case 'add_menu':
-            // Logic to add a new menu item
-            $nama = $conn->real_escape_string($data['nama']);
-            $harga = (float)$data['harga'];
-            $kategori = $conn->real_escape_string($data['kategori'] ?? null);
-            $stok = (int)$data['stok'];
-            $status = $conn->real_escape_string($data['status']);
+            $nama = $_POST['nama'];
+            $harga = (float)$_POST['harga'];
+            $kategori = $_POST['kategori'] ?? null;
+            $stok = (int)$_POST['stok'];
+            $status = $_POST['status'];
+            $userId = $_POST['userId'];
+            $gambarFileName = null;
 
-            $sql = "INSERT INTO menu (nama, harga, kategori, stok, status) VALUES (?, ?, ?, ?, ?)";
+            if (isset($_FILES['gambar']) && $_FILES['gambar']['error'] === UPLOAD_ERR_OK) {
+                $fileTmpPath = $_FILES['gambar']['tmp_name'];
+                $fileName = $_FILES['gambar']['name'];
+                $fileSize = $_FILES['gambar']['size'];
+                $fileType = $_FILES['gambar']['type'];
+                $fileNameCmps = explode(".", $fileName);
+                $fileExtension = strtolower(end($fileNameCmps));
+
+                $newFileName = md5(time() . $fileName) . '.' . $fileExtension;
+                $destPath = $uploadDir . $newFileName;
+
+                $allowedfileExtensions = array('jpg', 'gif', 'png', 'jpeg');
+                if (in_array($fileExtension, $allowedfileExtensions) && $fileSize < 5000000) {
+                    if (move_uploaded_file($fileTmpPath, $destPath)) {
+                        $gambarFileName = $newFileName;
+                    } else {
+                        throw new Exception("Gagal mengunggah gambar.");
+                    }
+                } else {
+                    throw new Exception("Format gambar tidak valid atau ukuran file terlalu besar (maks 5MB).");
+                }
+            }
+
+            $sql = "INSERT INTO menu (nama, harga, kategori, stok, status, penjual_id, gambar) VALUES (?, ?, ?, ?, ?, ?, ?)";
             $stmt = $conn->prepare($sql);
             if (!$stmt) {
-                throw new Exception("Prepare statement failed: " . $conn->error);
+                throw new Exception("Prepare statement failed: " . $conn->errorInfo()[2]);
             }
-            $stmt->bind_param("sdsss", $nama, $harga, $kategori, $stok, $status);
             
-            if ($stmt->execute()) {
+            if ($stmt->execute([$nama, $harga, $kategori, $stok, $status, $userId, $gambarFileName])) {
                 ob_end_clean();
                 echo json_encode(["status" => "success", "message" => "Menu berhasil ditambahkan"]);
             } else {
-                throw new Exception("Gagal menambahkan menu: " . $stmt->error);
+                throw new Exception("Gagal menambahkan menu: " . $stmt->errorInfo()[2]);
             }
-            $stmt->close();
             break;
 
         case 'update_menu':
-            // Logic to update an existing menu item
-            $id = (int)$data['id'];
-            $nama = $conn->real_escape_string($data['nama']);
-            $harga = (float)$data['harga'];
-            $kategori = $conn->real_escape_string($data['kategori'] ?? null);
-            $stok = (int)$data['stok'];
-            $status = $conn->real_escape_string($data['status']);
+            $id = (int)$_POST['id'];
+            $nama = $_POST['nama'];
+            $harga = (float)$_POST['harga'];
+            $kategori = $_POST['kategori'] ?? null;
+            $stok = (int)$_POST['stok'];
+            $status = $_POST['status'];
+            $gambarFileName = null;
 
-            $sql = "UPDATE menu SET nama = ?, harga = ?, kategori = ?, stok = ?, status = ? WHERE id = ?";
-            $stmt = $conn->prepare($sql);
-             if (!$stmt) {
-                throw new Exception("Prepare statement failed: " . $conn->error);
+            $stmt = $conn->prepare("SELECT gambar FROM menu WHERE id = ?");
+            $stmt->execute([$id]);
+            $currentGambar = $stmt->fetchColumn();
+
+            if (isset($_FILES['gambar']) && $_FILES['gambar']['error'] === UPLOAD_ERR_OK) {
+                $fileTmpPath = $_FILES['gambar']['tmp_name'];
+                $fileName = $_FILES['gambar']['name'];
+                $fileSize = $_FILES['gambar']['size'];
+                $fileType = $_FILES['gambar']['type'];
+                $fileNameCmps = explode(".", $fileName);
+                $fileExtension = strtolower(end($fileNameCmps));
+
+                $newFileName = md5(time() . $fileName) . '.' . $fileExtension;
+                $destPath = $uploadDir . $newFileName;
+
+                $allowedfileExtensions = array('jpg', 'gif', 'png', 'jpeg');
+                if (in_array($fileExtension, $allowedfileExtensions) && $fileSize < 5000000) {
+                    if (move_uploaded_file($fileTmpPath, $destPath)) {
+                        $gambarFileName = $newFileName;
+                        if ($currentGambar && file_exists($uploadDir . $currentGambar) && $currentGambar !== 'default-menu.png') {
+                             unlink($uploadDir . $currentGambar);
+                        }
+                    } else {
+                        throw new Exception("Gagal mengunggah gambar baru.");
+                    }
+                } else {
+                    throw new Exception("Format gambar baru tidak valid atau ukuran file terlalu besar (maks 5MB).");
+                }
+            } else {
+                $gambarFileName = $currentGambar;
             }
-            $stmt->bind_param("sdsssi", $nama, $harga, $kategori, $stok, $status, $id);
 
-            if ($stmt->execute()) {
+            $sql = "UPDATE menu SET nama = ?, harga = ?, kategori = ?, stok = ?, status = ?, gambar = ? WHERE id = ?";
+            $stmt = $conn->prepare($sql);
+            if (!$stmt) {
+                throw new Exception("Prepare statement failed: " . $conn->errorInfo()[2]);
+            }
+
+            if ($stmt->execute([$nama, $harga, $kategori, $stok, $status, $gambarFileName, $id])) {
                  ob_end_clean();
                  echo json_encode(["status" => "success", "message" => "Menu berhasil diperbarui"]);
             } else {
-                throw new Exception("Gagal memperbarui menu: " . $stmt->error);
+                throw new Exception("Gagal memperbarui menu: " . $stmt->errorInfo()[2]);
             }
-            $stmt->close();
             break;
 
         case 'delete_menu':
-            // Logic to delete a menu item
-            $id = (int)$data['id'];
+            $id = (int)$_POST['id'];
+
+            $stmt = $conn->prepare("SELECT gambar FROM menu WHERE id = ?");
+            $stmt->execute([$id]);
+            $gambarToDelete = $stmt->fetchColumn();
 
             $sql = "DELETE FROM menu WHERE id = ?";
             $stmt = $conn->prepare($sql);
              if (!$stmt) {
-                throw new Exception("Prepare statement failed: " . $conn->error);
+                throw new Exception("Prepare statement failed: " . $conn->errorInfo()[2]);
             }
-            $stmt->bind_param("i", $id);
 
-            if ($stmt->execute()) {
-                 ob_end_clean();
-                 echo json_encode(["status" => "success", "message" => "Menu berhasil dihapus"]);
+            if ($stmt->execute([$id])) {
+                if ($gambarToDelete && file_exists($uploadDir . $gambarToDelete) && $gambarToDelete !== 'default-menu.png') {
+                     unlink($uploadDir . $gambarToDelete);
+                }
+                ob_end_clean();
+                echo json_encode(["status" => "success", "message" => "Menu berhasil dihapus"]);
             } else {
-                throw new Exception("Gagal menghapus menu: " . $stmt->error);
+                throw new Exception("Gagal menghapus menu: " . $stmt->errorInfo()[2]);
             }
-            $stmt->close();
             break;
 
         default:
@@ -106,6 +183,3 @@ try {
     ob_end_clean();
     echo json_encode(["status" => "error", "message" => $e->getMessage()]);
 }
-
-$conn->close();
-?> 
