@@ -2,26 +2,25 @@
 <html lang="id">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>KantinITH - Beranda</title>
   <link rel="stylesheet" href="css/style.css">
   <link rel="stylesheet" href="https://unicons.iconscout.com/release/v4.0.8/css/line.css">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
 </head>
 <body>
 
-  <!-- NAVBAR -->
   <header class="navbar">
     <div class="logo">
-      <img src="../kantinITH_buyer_module/aset/logo.png" alt="Logo">
+      <img src="aset/logo.png" alt="Logo">
       <span class="brand">KantinITH</span>
     </div>
     <nav>
       <a href="#" onclick="showLogin()">Masuk</a>
-      <a href="#tentang">Tentang</a>
+      <a href="#" onclick="showTentangModal()">Tentang</a>
     </nav>
   </header>
 
-  <!-- LANDING -->
   <section class="hero" id="home-section">
     <div class="hero-text">
       <h1>Halo, Selamat datang<br>di <span class="highlight">KantinITH!</span></h1>
@@ -29,11 +28,20 @@
       <a href="#" class="cta-btn" onclick="showLogin()">Pesan Sekarang</a>
     </div>
     <div class="hero-img">
-      <img src="../kantinITH_buyer_module/aset/makanan.png" alt="Ilustrasi Makanan">
+      <img src="aset/makanan.png" alt="Ilustrasi Makanan">
     </div>
   </section>
 
-  <!-- FITUR -->
+  <!-- Section Menu Rekomendasi -->
+  <section class="menu-rekomendasi" id="menu-rekomendasi-section">
+    <h2>Menu Pilihan Hari Ini</h2>
+    <div class="menu-panel">
+      <div id="menu-rekomendasi-list" class="menu-grid">
+        <p class="loading">Memuat menu...</p>
+      </div>
+    </div>
+  </section>
+
   <section class="fitur" id="tentang">
     <h2>Kenapa pilih KantinITH?</h2>
     <div class="fitur-list">
@@ -55,7 +63,31 @@
     </div>
   </section>
 
-  <!-- LOGIN / RESET SPA -->
+  <!-- Modal Tentang Kami -->
+  <div id="tentangModal" class="modal-overlay">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Tentang Kami</h2>
+      </div>
+      <div class="modal-body">
+        <!-- Bagian Pembuat Aplikasi -->
+        <section class="creators-section-modal">
+          <p>Aplikasi ini dibuat oleh:</p>
+          <ul>
+            <li><i class="uil uil-user-circle"></i> Andi muh Tifatul M</li>
+            <li><i class="uil uil-user-circle"></i> nadiya</li>
+            <li><i class="uil uil-user-circle"></i> Firman</li>
+            <li><i class="uil uil-user-circle"></i> lulu</li>
+            <li><i class="uil uil-user-circle"></i> ulpi</li>
+          </ul>
+        </section>
+      </div>
+      <div class="modal-footer">
+        <button onclick="hideTentangModal()">Tutup</button>
+      </div>
+    </div>
+  </div>
+
   <div class="container" id="form-section" style="display:none;">
     <div id="form-app"></div>
   </div>
@@ -65,11 +97,89 @@
     const formApp = document.getElementById("form-app");
     const homeSection = document.getElementById("home-section");
     const fiturSection = document.getElementById("tentang");
+    const menuRekomendasiSection = document.getElementById("menu-rekomendasi-section");
+
+    // Check if user is already logged in
+    document.addEventListener('DOMContentLoaded', function() {
+      const userId = localStorage.getItem('loggedInUserId');
+      const userRole = localStorage.getItem('loggedInUserRole');
+
+      if (userId) {
+        // Redirect based on role
+        if (userRole === 'buyer') {
+          window.location.href = "buyer/menu.html";
+        } else if (userRole === 'seller') {
+          window.location.href = "seller/dashboard.html";
+        } else if (userRole === 'admin') {
+          window.location.href = "admin/admin.html";
+        }
+      }
+      
+      // Load menu items for recommendations
+      fetchMenuRekomendasi();
+    });
+
+    function fetchMenuRekomendasi() {
+      const menuList = document.getElementById("menu-rekomendasi-list");
+      menuList.innerHTML = '<p class="loading">Memuat menu...</p>';
+
+      fetch("backend/login.php", {
+        method: "POST",
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ action: "get_menu" })
+      })
+      .then(response => {
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.json();
+      })
+      .then(data => {
+        if (data.status === "success" && Array.isArray(data.menu)) {
+          if (data.menu.length === 0) {
+            menuList.innerHTML = '<p class="no-menu">Tidak ada menu yang tersedia saat ini</p>';
+            return;
+          }
+
+          menuList.innerHTML = ""; // Clear existing menu
+          // Limit to 4 items and use the smaller, simpler card structure, excluding "Es krim"
+          data.menu.filter(item => item.nama !== 'Es krim').slice(0, 4).forEach(item => {
+            const div = document.createElement("div");
+            div.className = "menu-card simple-menu clickable-menu"; // Apply simple-menu class
+            let imgSrc = 'aset/default-menu.png';
+            if (item.gambar && item.gambar !== '' && item.gambar !== 'null') {
+              imgSrc = 'aset/menu_images/' + item.gambar;
+            }
+            div.innerHTML = `
+              <div class="menu-img">
+                <img src="${imgSrc}" alt="${item.nama}" onerror="this.src='aset/default-menu.png'">
+              </div>
+              <div class="menu-info">
+                <h4>${item.nama}</h4>
+                <p class="menu-price">Rp ${parseInt(item.harga).toLocaleString('id-ID')}</p>
+                <p class="seller">Penjual: ${item.nama_penjual || '-'}</p>
+              </div>
+            `;
+            div.addEventListener('click', function() {
+                showLogin(); // Clicking on menu item leads to login
+            });
+            menuList.appendChild(div);
+          });
+        } else {
+          menuList.innerHTML = '<p class="error">Gagal memuat menu: ' + (data.message || 'Unknown error') + '</p>';
+        }
+      })
+      .catch(error => {
+        console.error('Error fetching menu:', error);
+        menuList.innerHTML = '<p class="error">Error: ' + error.message + '</p>';
+      });
+    }
 
     function showLogin() {
       formSection.style.display = "flex";
       homeSection.style.display = "none";
       fiturSection.style.display = "none";
+      menuRekomendasiSection.style.display = "none"; // Hide recommendation section
       formApp.innerHTML = `
         <div class="form-container">
           <h2>Login Pengguna</h2>
@@ -79,7 +189,7 @@
           <div class="form-group">
             <input id="password" type="password" placeholder="Password" required>
           </div>
-          <button id="loginBtn" onclick="doLogin()">Masuk <i class="fas fa-sign-in-alt"></i></button>
+          <button id="loginBtn" onclick="doLogin()">Masuk</button>
           <div class="form-links">
             <a href="#" onclick="showReset()">Lupa Password?</a>
             <a href="#" onclick="hideForm()">← Kembali ke Beranda</a>
@@ -110,6 +220,17 @@
       formSection.style.display = "none";
       homeSection.style.display = "flex";
       fiturSection.style.display = "block";
+      menuRekomendasiSection.style.display = "block"; // Show recommendation section
+    }
+
+    function showTentangModal() {
+      const modal = document.getElementById("tentangModal");
+      modal.style.display = "flex"; 
+    }
+
+    function hideTentangModal() {
+      const modal = document.getElementById("tentangModal");
+      modal.style.display = "none";
     }
 
     function showLoading(buttonId) {
@@ -135,7 +256,6 @@
       const username = document.getElementById("username").value.trim();
       const password = document.getElementById("password").value.trim();
 
-      // Validasi input
       if (!username || !password) {
         showMessage("Username dan password harus diisi", true);
         return;
@@ -143,7 +263,7 @@
 
       showLoading("loginBtn");
 
-      fetch("./backend/login.php", {
+      fetch("backend/login.php", {
         method: "POST",
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: "login", username, password })
@@ -157,10 +277,8 @@
           const data = JSON.parse(text);
           
           if (data.status === "success") {
-            // Ambil username dari data respons jika tersedia, fallback ke nilai input
             const usernameToStore = data.username || username; 
             
-            // Cek role dan arahkan ke halaman yang sesuai
             const role = data.role;
             if (!role) {
               showMessage("Role pengguna tidak valid", true);
@@ -175,14 +293,12 @@
               localStorage.setItem("loggedInUserId", data.userId);
             }
 
-            // Tentukan halaman tujuan berdasarkan role
             const redirect = {
               buyer: "buyer/menu.html",
               seller: "seller/dashboard.html",
               admin: "admin/manage_users.html"
             };
 
-            // Redirect ke halaman yang sesuai
             if (redirect[role]) {
               window.location.href = redirect[role];
             } else {
@@ -211,7 +327,6 @@
       const username = document.getElementById("username").value.trim();
       const new_password = document.getElementById("new_password").value.trim();
 
-      // Validasi input
       if (!username || !new_password) {
         showMessage("Username dan password baru harus diisi", true);
         return;
@@ -253,10 +368,418 @@
         hideLoading("resetBtn", "Reset Password");
       });
     }
+
+    function handleAddToCart(itemStr) {
+      const userId = localStorage.getItem('loggedInUserId');
+      if (!userId) {
+        showLogin();
+        return;
+      }
+      const item = JSON.parse(decodeURIComponent(itemStr));
+      addToCartLocal(item);
+    }
+
+    function addToCartLocal(item) {
+      let keranjang = [];
+      try {
+        keranjang = JSON.parse(localStorage.getItem('keranjangITH')) || [];
+      } catch (e) {
+        keranjang = [];
+      }
+      const existingIdx = keranjang.findIndex(i => parseInt(i.id) === parseInt(item.id));
+      if (existingIdx > -1) {
+        keranjang[existingIdx].jumlah++;
+        keranjang[existingIdx].total = parseFloat(keranjang[existingIdx].harga) * keranjang[existingIdx].jumlah;
+      } else {
+        keranjang.push({
+          id: parseInt(item.id),
+          nama: item.nama,
+          harga: parseFloat(item.harga),
+          jumlah: 1,
+          total: parseFloat(item.harga)
+        });
+      }
+      localStorage.setItem('keranjangITH', JSON.stringify(keranjang));
+      alert('Menu berhasil ditambahkan ke keranjang!');
+    }
+
+    window.onclick = function(event) {
+      const modal = document.getElementById("tentangModal");
+      if (event.target == modal) {
+        modal.style.display = "none";
+      }
+    }
   </script>
 
   <style>
-      </style>
+    .creators-section h2 {
+      margin-bottom: 30px;
+      color: #333;
+    }
+
+    .creators-section ul {
+      list-style: none;
+      padding: 0;
+      margin: 0 auto;
+      max-width: 400px;
+    }
+
+    .creators-section li {
+      background-color: #fff;
+      margin-bottom: 10px;
+      padding: 15px;
+      border-radius: 5px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      font-size: 1.1em;
+      color: #555;
+    }
+
+    /* Basic Modal Styles */
+    .modal-overlay {
+      display: none; /* Hidden by default */
+      position: fixed; /* Stay in place */
+      z-index: 1; /* Sit on top */
+      left: 0;
+      top: 0;
+      width: 100%; /* Full width */
+      height: 100%; /* Full height */
+      overflow: auto; /* Enable scroll if needed */
+      background-color: rgba(0, 0, 0, 0.5); /* Black w/ opacity */
+      justify-content: center; /* Center content horizontally */
+      align-items: center; /* Center content vertically */
+    }
+
+    .modal-content {
+      background-color: #fefefe;
+      margin: auto;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+      width: 80%; /* Could be responsive */
+      max-width: 400px; /* Max width */
+      text-align: center;
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid #eee;
+      padding-bottom: 10px;
+      margin-bottom: 15px;
+    }
+
+    .modal-header h2 {
+      margin: 0;
+      font-size: 1.5em;
+      color: #333;
+    }
+
+    .close-btn {
+      color: #aaa;
+      font-size: 28px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    .close-btn:hover,
+    .close-btn:focus {
+      color: #777;
+      text-decoration: none;
+    }
+
+    .modal-body {
+      margin-bottom: 15px;
+    }
+
+    .modal-footer {
+      border-top: 1px solid #eee;
+      padding-top: 10px;
+    }
+
+    .modal-footer button {
+      background-color: #6c757d;
+      color: white;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 1em;
+    }
+
+    .modal-footer button:hover {
+      background-color: #5a6268;
+    }
+
+    /* Style for the list inside the modal */
+    .creators-section-modal ul {
+      list-style: none;
+      padding: 0;
+      margin: 10px 0;
+    }
+
+    .creators-section-modal li {
+      padding: 8px 0;
+      font-size: 1.1em;
+      color: #555;
+      display: flex;
+      align-items: center;
+      gap: 10px; /* Space between icon and name */
+    }
+
+    /* Remove the original creators section */
+    .creators-section {
+      display: none;
+    }
+
+    /* Ensure content in the modal is visible */
+    .modal-body,
+    .creators-section-modal {
+      display: block !important; /* Ensure it's not hidden by other rules */
+      visibility: visible !important; /* Ensure visibility */
+      padding: 10px 20px; /* Add padding on sides as well */
+    }
+
+    /* Explicit styles for modal content */
+    .creators-section-modal p,
+    .creators-section-modal ul,
+    .creators-section-modal li {
+      color: #333 !important; /* Ensure text color is visible */
+      visibility: visible !important; /* Ensure visibility */
+      /* Add more specific styles if needed, e.g., font-size, margin */
+    }
+
+    /* Style for the Whatsapp link */
+    .whatsapp-link {
+      display: inline-block;
+      background-color: #25D366; /* WhatsApp green */
+      color: white;
+      padding: 10px 20px;
+      border-radius: 5px;
+      text-decoration: none;
+      font-size: 1em;
+      margin-right: 10px; /* Space between link and close button */
+      transition: background-color 0.3s ease;
+    }
+
+    .whatsapp-link:hover {
+      background-color: #1DA851;
+    }
+
+    /* Opsi: Tambahkan smooth scrolling */
+    html {
+      scroll-behavior: smooth;
+    }
+
+    .menu-rekomendasi {
+      background: #fff;
+      padding: 48px 0 32px 0;
+      text-align: center;
+    }
+    .menu-rekomendasi h2 {
+      font-size: 2rem;
+      color: #fb8c00;
+      margin-bottom: 32px;
+      font-weight: 600;
+    }
+    .menu-panel {
+      background: #fff8f0;
+      border-radius: 18px;
+      box-shadow: 0 4px 24px rgba(251,140,0,0.10);
+      padding: 32px 24px;
+      max-width: 1100px;
+      margin: 0 auto 32px auto;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .menu-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 28px;
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+    .menu-card {
+      background: #fff8f0;
+      border-radius: 16px;
+      box-shadow: 0 2px 12px rgba(251,140,0,0.07);
+      padding: 20px 18px 18px 18px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      transition: box-shadow 0.2s, transform 0.2s;
+    }
+    .menu-card:hover {
+      box-shadow: 0 4px 18px rgba(251,140,0,0.15);
+      transform: translateY(-4px) scale(1.03);
+    }
+    .menu-img img {
+      width: 80px;
+      height: 80px;
+      object-fit: cover;
+      border-radius: 50%;
+      background: #fff3e0;
+      margin-bottom: 16px;
+      border: 2px solid #ffa726;
+    }
+    .menu-info h4 {
+      font-size: 1.1rem;
+      font-weight: 600;
+      margin-bottom: 6px;
+      color: #333;
+    }
+    .menu-price {
+      color: #fb8c00;
+      font-weight: 500;
+      margin-bottom: 12px;
+    }
+    .menu-btn {
+      background: #fb8c00;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      padding: 8px 18px;
+      font-size: 1rem;
+      font-weight: 500;
+      cursor: not-allowed;
+      opacity: 0.7;
+      transition: background 0.2s;
+    }
+    .menu-btn:active {
+      background: #ffa726;
+    }
+    @media (max-width: 900px) {
+      .menu-grid {
+        grid-template-columns: repeat(3, 1fr);
+      }
+    }
+    @media (max-width: 700px) {
+      .menu-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+    @media (max-width: 500px) {
+      .menu-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .clickable-menu {
+      cursor: pointer;
+      transition: box-shadow 0.2s, transform 0.2s, background 0.2s;
+    }
+    .clickable-menu:active {
+      background: #ffe0b2;
+      transform: scale(0.98);
+    }
+    .clickable-menu:hover {
+      box-shadow: 0 6px 24px rgba(251,140,0,0.18);
+      background: #fff3e0;
+    }
+
+    .simple-menu {
+      padding: 0 0 18px 0;
+      min-width: 180px;
+      max-width: 220px;
+      box-shadow: 0 1px 8px rgba(251,140,0,0.07);
+      border-radius: 14px;
+      background: #fff;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      transition: box-shadow 0.2s, transform 0.2s, background 0.2s;
+      cursor: pointer;
+    }
+    .simple-menu .menu-img img {
+      width: 100%;
+      max-width: 120px;
+      height: 120px;
+      object-fit: cover;
+      border-radius: 12px 12px 0 0;
+      margin-bottom: 10px;
+      background: #fff3e0;
+      display: block;
+    }
+    .simple-menu .menu-info {
+      padding: 0 12px;
+      text-align: center;
+    }
+    .simple-menu h4 {
+      font-size: 1.08rem;
+      font-weight: 600;
+      margin: 8px 0 4px 0;
+      color: #333;
+    }
+    .simple-menu .menu-price {
+      color: #fb8c00;
+      font-weight: 500;
+      margin-bottom: 2px;
+      font-size: 1rem;
+    }
+    .simple-menu .seller {
+      color: #888;
+      font-size: 0.93rem;
+      margin-bottom: 0;
+    }
+    .simple-menu:hover {
+      box-shadow: 0 4px 18px rgba(251,140,0,0.15);
+      background: #fff8f0;
+      transform: translateY(-2px) scale(1.02);
+    }
+    @media (max-width: 700px) {
+      .simple-menu {
+        min-width: 120px;
+        max-width: 160px;
+      }
+      .simple-menu .menu-img img {
+        max-width: 80px;
+        height: 80px;
+      }
+    }
+
+    .menu-panel:hover {
+      box-shadow: 0 8px 32px rgba(251,140,0,0.18);
+      transition: box-shadow 0.3s;
+    }
+
+    .menu-card.simple-menu {
+      width: 100%;
+      max-width: 180px; /* atau 200px, sesuai selera */
+      min-width: 0;
+      background: #fff;
+      border-radius: 14px;
+      box-shadow: 0 1px 8px rgba(251,140,0,0.07);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 16px 8px 18px 8px;
+      box-sizing: border-box;
+      overflow: hidden; /* penting agar gambar tidak keluar */
+    }
+
+    .menu-card.simple-menu .menu-img {
+      width: 100%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      overflow: hidden; /* gambar tidak keluar */
+    }
+
+    .menu-card.simple-menu .menu-img img {
+      width: 100px;   /* atau 120px, sesuai selera */
+      height: 100px;  /* atau 120px, sesuai selera */
+      object-fit: cover;
+      border-radius: 12px;
+      background: #fff3e0;
+      display: block;
+      border: 2px solid #ffa726;
+      max-width: 100%;
+      max-height: 100%;
+    }
+  </style>
 
 </body>
 </html>
+
