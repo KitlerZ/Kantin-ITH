@@ -1,0 +1,287 @@
+<?php include '../backend/auth_check.php'; ?>
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tagihan Saya - Kantin ITH</title>
+    <link rel="stylesheet" href="../css/seller.css">
+    <link rel="stylesheet" href="https://unicons.iconscout.com/release/v4.0.8/css/line.css">
+    <script src="js/seller.js"></script>
+</head>
+<body>
+    <div class="container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <img src="../aset/logo.png" alt="KantinITH Logo" class="logo">
+                <h2>KantinITH</h2>
+            </div>
+            <nav class="sidebar-nav">
+                <a href="dashboard.html"><i class="uil uil-chart-line"></i> Dashboard</a>
+                <a href="daftar_stok_menu.html"><i class="uil uil-store"></i> Daftar Menu</a>
+                <a href="daftar_pesanan.html"><i class="uil uil-shopping-cart"></i> Daftar Pesanan</a>
+                <a href="bills.html" class="active"><i class="uil uil-bill"></i> Tagihan Saya</a>
+                <a href="#" id="logoutLinkSidebar"><i class="uil uil-signout"></i> Logout</a>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <div class="top-bar">
+                <div class="balance-card">
+                    Saldo: <span id="seller-balance">Rp 0</span>
+                </div>
+            </div>
+
+            <div class="content">
+                <h1>Tagihan Saya</h1>
+                
+                <div class="bills-container">
+                    <div class="bills-filters">
+                        <select id="status-filter" onchange="loadBills()">
+                            <option value="all">Semua Status</option>
+                            <option value="pending">Menunggu Pembayaran</option>
+                            <option value="paid">Lunas</option>
+                        </select>
+                        <select id="month-filter" onchange="loadBills()">
+                            <option value="all">Semua Bulan</option>
+                            <option value="1">Januari</option>
+                            <option value="2">Februari</option>
+                            <option value="3">Maret</option>
+                            <option value="4">April</option>
+                            <option value="5">Mei</option>
+                            <option value="6">Juni</option>
+                            <option value="7">Juli</option>
+                            <option value="8">Agustus</option>
+                            <option value="9">September</option>
+                            <option value="10">Oktober</option>
+                            <option value="11">November</option>
+                            <option value="12">Desember</option>
+                        </select>
+                    </div>
+
+                    <div class="bills-list" id="bills-list">
+                        <!-- Bills will be loaded here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="logoutPopup" class="popup-overlay">
+        <div class="popup-box">
+            <div class="popup-header">
+                <h3>Konfirmasi Keluar</h3>
+            </div>
+            <div class="popup-content">
+                <div class="user-avatar">
+                    <i class="uil uil-user"></i>
+                </div>
+                <div class="user-details">
+                    <div class="user-name" id="sellerLogoutUserName"></div>
+                    <div class="user-role" id="sellerLogoutUserRole"></div>
+                </div>
+                <p>Apakah Anda yakin ingin keluar?</p>
+                <div class="checkout-actions">
+                    <button onclick="logout()" class="confirm-btn">Ya, Keluar</button>
+                    <button onclick="closePopup('logoutPopup')" class="cancel-btn">Batal</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Check if user is logged in as seller
+        function checkAuth() {
+            const userId = localStorage.getItem('loggedInUserId');
+            const userRole = localStorage.getItem('loggedInUserRole');
+            if (!userId || userRole !== 'seller') {
+                window.location.href = '../index.html'; // Redirect to index.html if not authenticated or not a seller
+            }
+        }
+
+        // Update seller balance
+        async function updateBalance() {
+            const userId = localStorage.getItem('loggedInUserId');
+            if (!userId) return;
+
+            try {
+                const response = await fetch('../backend/admin_manage_users.php', { // Reusing admin_manage_users to get user details by ID
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'get_user_details', userId: userId })
+                });
+                const data = await response.json();
+
+                if (data.status === 'success' && data.user) {
+                    document.getElementById('seller-balance').textContent = 
+                        Rp ${parseFloat(data.user.saldo).toLocaleString('id-ID')};
+                    // Optionally update localStorage user object if it's kept in sync
+                    let user = JSON.parse(localStorage.getItem('user'));
+                    if (user) {
+                        user.saldo = data.user.saldo;
+                        localStorage.setItem('user', JSON.stringify(user));
+                    }
+                } else {
+                    console.error('Error fetching user balance:', data.message);
+                }
+            } catch (error) {
+                console.error('Error fetching user balance:', error);
+            }
+        }
+
+        // Load bills
+        function loadBills() {
+            const userId = localStorage.getItem('loggedInUserId'); // Use loggedInUserId
+            if (!userId) {
+                window.location.href = '../index.html'; // Redirect to index.html for login
+                return;
+            }
+
+            const status = document.getElementById('status-filter').value;
+            const month = document.getElementById('month-filter').value;
+            
+            fetch('../backend/seller_manage_bills.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    action: 'get_my_bills',
+                    seller_id: userId, // Use loggedInUserId
+                    status: status,
+                    month: month
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    displayBills(data.bills);
+                } else {
+                    alert(data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Gagal memuat data tagihan');
+            });
+        }
+
+        // Display bills
+        function displayBills(bills) {
+            const billsList = document.getElementById('bills-list');
+            billsList.innerHTML = '';
+
+            if (bills.length === 0) {
+                billsList.innerHTML = '<p class="no-data">Tidak ada tagihan</p>';
+                return;
+            }
+
+            const table = document.createElement('table');
+            table.className = 'bills-table';
+            
+            // Table header
+            table.innerHTML = `
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Periode</th>
+                        <th>Jumlah</th>
+                        <th>Status</th>
+                        <th>Tanggal Dibuat</th>
+                        <th>Tanggal Bayar</th>
+                        <th>Aksi</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            `;
+
+            const tbody = table.querySelector('tbody');
+            
+            bills.forEach(bill => {
+                const row = document.createElement('tr');
+                const createdDate = new Date(bill.tanggal).toLocaleDateString('id-ID'); // Use bill.tanggal
+                const paidDate = bill.dibayar ? new Date(bill.dibayar).toLocaleDateString('id-ID') : '-';
+                
+                row.innerHTML = `
+                    <td>${bill.id}</td>
+                    <td>${bill.periode_bulan}/${bill.periode_tahun}</td>
+                    <td>Rp ${parseFloat(bill.total).toLocaleString('id-ID')}</td>
+                    <td>
+                        <span class="bill-status ${bill.status}">
+                            ${bill.status === 'pending' ? 'Menunggu Pembayaran' : 'Lunas'}
+                        </span>
+                    </td>
+                    <td>${createdDate}</td>
+                    <td>${paidDate}</td>
+                    <td>
+                        ${bill.status === 'pending' ? 
+                            <button onclick="payBill(${bill.id}, ${bill.total})" class="action-btn primary-btn">Bayar</button> :
+                            '-'
+                        }
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+
+            billsList.appendChild(table);
+        }
+
+        // Pay Bill function
+        async function payBill(billId, billAmount) {
+            if (!confirm(Apakah Anda yakin ingin membayar tagihan ini sebesar Rp ${billAmount.toLocaleString('id-ID')}?)) {
+                return;
+            }
+
+            const userId = localStorage.getItem('loggedInUserId');
+            if (!userId) {
+                alert('Sesi Anda telah berakhir. Silakan login kembali.');
+                window.location.href = '../index.html';
+                return;
+            }
+
+            try {
+                const response = await fetch('../backend/seller_manage_bills.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        action: 'pay_bill',
+                        bill_id: billId,
+                        seller_id: userId
+                    })
+                });
+                const data = await response.json();
+
+                if (data.status === 'success') {
+                    alert(data.message);
+                    loadBills(); // Refresh the bill list
+                    updateBalance(); // Update seller's balance
+                } else {
+                    alert(Gagal membayar tagihan: ${data.message});
+                }
+            } catch (error) {
+                console.error('Error paying bill:', error);
+                alert('Terjadi kesalahan saat memproses pembayaran.');
+            }
+        }
+
+        // Logout
+        function logout() {
+            localStorage.removeItem('loggedInUserId');
+            localStorage.removeItem('loggedInUserRole');
+            localStorage.removeItem('loggedInUsername');
+            localStorage.removeItem('session_token');
+            localStorage.removeItem('user'); // Also clear the generic 'user' item if used
+            window.location.href = '../index.html';
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            checkAuth();
+            updateBalance();
+            loadBills();
+        });
+    </script>
+</body>
+</html>
