@@ -1,69 +1,73 @@
+<?php include '../backend/auth_check.php'; ?>
 <!DOCTYPE html>
 <html lang="id">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>KantinITH - Dashboard Penjual</title>
   <link rel="stylesheet" href="../css/seller.css">
   <link rel="stylesheet" href="https://unicons.iconscout.com/release/v4.0.8/css/line.css">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+  <script src="../js/seller_common.js"></script>
+  <script src="js/seller.js"></script>
 </head>
 <body>
-  <!-- NAVBAR (Optional, can be hidden on larger screens if using sidebar) -->
   <header class="navbar">
     <div class="logo">
-      <img src="../aset/logo.png" alt="Logo">
+      <img src="../aset/logo.png" alt="KantinITH Logo" class="logo">
       <span class="brand">KantinITH</span>
     </div>
     <nav class="top-nav">
-      <!-- Links will be in sidebar -->
-      <div class="profile" onclick="toggleProfile()">
+      <div class="profile" onclick="toggleProfile(event)">
           <div class="profile-icon">👤</div>
           <span class="profile-name"></span>
       </div>
-      
-      <a href="#" onclick="showLogout()" id="logoutLinkTop"><i class="uil uil-signout"></i> Keluar</a>
     </nav>
   </header>
 
   <div class="container-layout">
-    <!-- SIDEBAR -->
     <aside class="sidebar">
-      <div class="sidebar-logo">
-         <img src="../aset/logo.png" alt="Logo">
-         <span class="brand">KantinITH</span>
+      <div class="sidebar-header">
+         <img src="../aset/logo.png" alt="KantinITH Logo" class="logo">
+         <h2>KantinITH</h2>
       </div>
       <nav class="sidebar-nav">
         <a href="dashboard.html" class="active"><i class="uil uil-chart-line"></i> Dashboard</a>
         <a href="daftar_stok_menu.html"><i class="uil uil-store"></i> Daftar Menu</a>
         <a href="daftar_pesanan.html"><i class="uil uil-shopping-cart"></i> Daftar Pesanan</a>
-        <a href="#" onclick="showLogout()" id="logoutLinkSidebar"><i class="uil uil-signout"></i> Logout</a>
+        <a href="bills.html"><i class="uil uil-bill"></i> Tagihan Saya</a>
+        <a href="#" id="logoutLinkSidebar"><i class="uil uil-signout"></i> Logout</a>
       </nav>
     </aside>
 
-    <!-- MAIN CONTENT -->
     <main class="main-content">
-       <!-- Add a topbar for profile info -->
-       <header class="main-content-topbar">
-            <div class="profile" onclick="toggleProfile()">
+       <header class="topbar">
+        <div class="topbar-right">
+          <div class="topbar-actions">
+            <div class="profile" onclick="toggleProfile(event)">
                 <div class="profile-icon">👤</div>
                 <span class="profile-name"></span>
+                <div class="profile-dropdown" id="profileDropdown">
+                    <a href="#" onclick="showProfileInfoPopup(); return false;"><span class="profile-dropdown-icon">👤</span> <span class="profile-dropdown-text">Profile</span></a>
+                    <a href="#"><span>📱</span> Bantuan</a>
+                    <a href="#" id="logoutLinkDropdown" class="logout-link"><span>🚪</span> Logout</a>
+                </div>
             </div>
-            <!-- The profile-dropdown will be positioned relative to this .profile element -->
-            <div class="profile-dropdown" id="profileDropdown">
-                <a href="#" onclick="showProfileInfoPopup(); return false;"><span>👤</span> Profile</a>
-                <a href="#"><span>📱</span> Bantuan</a>
-                <a href="#" onclick="showLogout()" class="logout-link"><span>🚪</span> Logout</a>
-            </div>
+          </div>
+        </div>
        </header>
 
        <h1 class="page-title">Dashboard Penjual</h1>
-      <!-- STATISTICS -->
       <section class="stats">
         <div class="stat-card">
-          <i class="uil uil-shopping-cart"></i>
+          <i class="uil uil-wallet"></i>
           <div class="stat-info">
-            <h3>Total Pesanan Hari Ini</h3>
-            <p id="todayOrders">0</p>
+            <h3>Saldo Anda</h3>
+            <div class="saldo-container">
+              <p id="sellerSaldo" class="loading">Memuat...</p>
+              <button onclick="fetchSellerSaldo()" class="refresh-btn" title="Refresh Saldo">
+                <i class="uil uil-refresh"></i>
+              </button>
+            </div>
           </div>
         </div>
         <div class="stat-card">
@@ -83,24 +87,14 @@
          <div class="stat-card">
           <i class="uil uil-check-circle"></i>
           <div class="stat-info">
-            <h3>Transaksi Terkonfirmasi</h3>
+            <h3>Transaksi</h3>
             <p id="confirmedTransactions">0</p>
           </div>
         </div>
       </section>
 
-      <!-- SUMMARY SECTION -->
       <section class="summary">
-         <div class="summary-card">
-            <h4>Ringkasan</h4>
-            <ul id="summaryList">
-               <!-- Summary items will be populated by JavaScript -->
-               <li>Memuat ringkasan...</li>
-            </ul>
-         </div>
-
-          <!-- SCHEDULE -->
-         <div class="schedule-card">
+          <div class="schedule-card">
             <h4>Jadwal Kantin</h4>
              <ul>
                  <li>Senin - Kamis 9.00 - 18.00</li>
@@ -109,65 +103,72 @@
          </div>
       </section>
 
+      <section class="seller-transactions-section card">
+        <div class="section-header">
+          <h2>Riwayat Transaksi Saldo</h2>
+          <div class="transaction-controls">
+            <select id="transactionFilter" onchange="filterTransactions()">
+              <option value="all">Semua Transaksi</option>
+              <option value="today">Hari Ini</option>
+              <option value="week">7 Hari Terakhir</option>
+              <option value="month">30 Hari Terakhir</option>
+            </select>
+            <button onclick="fetchSellerTransactions()" class="refresh-btn" title="Refresh Transaksi">
+              <i class="uil uil-refresh"></i>
+            </button>
+          </div>
+        </div>
+        <div class="table-container">
+          <table id="sellerTransactionsTable" class="transactions-table">
+            <thead>
+              <tr>
+                <th>ID Transaksi</th>
+                <th>Keterangan</th>
+                <th>Jumlah</th>
+                <th>Waktu Transaksi</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td colspan="4" class="loading-row">
+                  <div class="loading-spinner"></div>
+                  <span>Memuat riwayat transaksi...</span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
 
-      <!-- RECENT ORDERS (Keep for now, might integrate into summary or have a separate section) -->
       <section class="recent-orders">
         <div class="section-header">
           <h2>Pesanan Terbaru</h2>
           <a href="daftar_pesanan.html" class="view-all">Lihat Semua</a>
         </div>
         <div class="orders-list" id="recentOrdersList">
-          <!-- Orders will be populated by JavaScript -->
           <p>Memuat pesanan terbaru...</p>
         </div>
       </section>
 
-      <!-- QUICK ACTIONS (Move or keep based on preference) -->
-      <!--
-      <section class="quick-actions">
-        <h2>Aksi Cepat</h2>
-        <div class="action-buttons">
-          <button onclick="location.href='daftar_stok_menu.html'" class="action-btn">
-            <i class="uil uil-plus-circle"></i>
-            Tambah Menu Baru
-          </button>
-          <button onclick="location.href='daftar_stok_menu.html'" class="action-btn">
-            <i class="uil uil-edit"></i>
-            Update Stok
-          </button>
-        </div>
-      </section>
-      -->
     </main>
   </div>
 
-  <!-- PROFILE POPUP -->
-  <!-- Menambahkan dropdown profil mirip buyer/menu.html -->
-  <!-- This is now moved inside main-content-topbar -->
-  <!-- <div class="profile-dropdown" id="profileDropdown">
-      <a href="#" onclick="showProfileInfoPopup(); return false;"><span>👤</span> Profile</a>
-      <a href="#"><span>📱</span> Bantuan</a>
-      <a href="#" onclick="showLogout()"><span>🚪</span> Logout</a>
-   </div> -->
-
-    <!-- PROFILE POPUP (Mengganti struktur yang lebih sederhana dengan yang dari buyer/menu.html) -->
     <div class="popup-overlay" id="profileInfoPopup" style="display:none;">
         <div class="popup-box">
             <div class="popup-header">
                 <h3>Profil Pengguna</h3>
-                <span class="close-popup" onclick="closePopup('profileInfoPopup')">✖</span>
             </div>
             <div class="popup-content">
                 <div class="user-info">
-                    <div class="user-avatar">👤</div>
-                    <h4 class="user-name" id="profileInfoUserName"></h4>
-                    <p class="user-role" id="profileInfoUserRole"></p>
+                    <div class="user-avatar"><i class="uil uil-user"></i></div>
+                    <div class="user-details">
+                       <h4 class="user-name" id="profileInfoUserName"></h4>
+                       <p class="user-role" id="profileInfoUserRole"></p>
+                    </div>
                 </div>
-                <!-- Add more profile info here if available -->
                 <div class="profile-details">
                     <p><strong>Email:</strong> <span id="profileInfoEmail">email@example.com</span></p>
                     <p><strong>Nomor Telepon:</strong> <span id="profileInfoPhone">081234567890</span></p>
-                    <!-- Add other details as needed -->
                 </div>
                 <div class="checkout-actions">
                     <button class="cancel-btn" onclick="closePopup('profileInfoPopup')">Tutup</button>
@@ -176,362 +177,449 @@
         </div>
     </div>
 
-  <!-- LOGOUT POPUP -->
-  <div id="logoutPopup" class="popup-overlay" style="display: none;">
+  <div id="logoutPopup" class="popup-overlay">
     <div class="popup-box">
       <div class="popup-header">
         <h3>Konfirmasi Keluar</h3>
-        <!-- <span class="close-popup" onclick="closePopup('logoutPopup')">✖</span> -->
       </div>
       <div class="popup-content">
-        <div class="user-info">
-          <div class="user-avatar">
-            <i class="uil uil-user"></i> <!-- Atau elemen avatar lainnya -->
-          </div>
-          <div class="user-details"> <!-- Tambahkan div ini untuk membungkus nama dan role -->
-             <div class="user-name" id="sellerLogoutUserName"></div>
-             <div class="user-role" id="sellerLogoutUserRole"></div>
-          </div>
+        <div class="user-avatar">
+          <i class="uil uil-user"></i>
+        </div>
+        <div class="user-details">
+          <div class="user-name" id="sellerLogoutUserName"></div>
+          <div class="user-role" id="sellerLogoutUserRole"></div>
         </div>
         <p>Apakah Anda yakin ingin keluar?</p>
         <div class="checkout-actions">
-          <button onclick="logout()" class="confirm-btn">Ya, Keluar</button>
-          <button onclick="closePopup('logoutPopup')" class="cancel-btn">Batal</button>
+            <button onclick="logout()" class="confirm-btn">Ya, Keluar</button>
+            <button onclick="closePopup('logoutPopup')" class="cancel-btn">Batal</button>
         </div>
       </div>
     </div>
   </div>
 
+  <style>
+  .seller-transactions-section {
+    margin: 20px 0;
+    padding: 20px;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  }
+
+  .seller-transactions-section .section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+  }
+
+  .transaction-controls {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+  }
+
+  .transaction-controls select {
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    background-color: white;
+    font-size: 14px;
+  }
+
+  .refresh-btn {
+    background: none;
+    border: none;
+    color: #666;
+    cursor: pointer;
+    padding: 8px;
+    border-radius: 4px;
+    transition: all 0.3s ease;
+  }
+
+  .refresh-btn:hover {
+    background-color: #f0f0f0;
+    color: #333;
+  }
+
+  .refresh-btn i {
+    font-size: 18px;
+  }
+
+  .saldo-container {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .loading {
+    color: #666;
+    font-style: italic;
+  }
+
+  .loading-spinner {
+    width: 20px;
+    height: 20px;
+    border: 2px solid #f3f3f3;
+    border-top: 2px solid #3498db;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-right: 10px;
+  }
+
+  .loading-row {
+    text-align: center;
+    padding: 20px;
+    color: #666;
+  }
+
+  .loading-row span {
+    display: inline-flex;
+    align-items: center;
+  }
+
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+
+  .table-container {
+    overflow-x: auto;
+  }
+
+  .transactions-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+  }
+
+  .transactions-table th,
+  .transactions-table td {
+    padding: 12px 15px;
+    text-align: left;
+    border-bottom: 1px solid #eee;
+  }
+
+  .transactions-table th {
+    background-color: #f8f9fa;
+    font-weight: 600;
+    color: #333;
+  }
+
+  .transactions-table tbody tr:hover {
+    background-color: #f8f9fa;
+  }
+
+  .transactions-table td:last-child {
+    white-space: nowrap;
+  }
+
+  .amount-positive {
+    color: #28a745;
+    font-weight: 600;
+  }
+
+  .amount-negative {
+    color: #dc3545;
+    font-weight: 600;
+  }
+
+  .error-message {
+    color: #dc3545;
+    text-align: center;
+    padding: 20px;
+    font-style: italic;
+  }
+
+  .recent-orders {
+    margin: 20px 0;
+    padding: 20px;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  }
+
+  .order-card {
+    background: #fff;
+    border: 1px solid #eee;
+    border-radius: 8px;
+    padding: 15px;
+    margin-bottom: 15px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  }
+
+  .order-header {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 10px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #eee;
+  }
+
+  .order-id {
+    font-weight: bold;
+    color: #333;
+  }
+
+  .order-time {
+    color: #666;
+  }
+
+  .order-items {
+    margin: 10px 0;
+  }
+
+  .order-item {
+    margin: 5px 0;
+    color: #444;
+  }
+
+  .order-total {
+    color: #2c3e50;
+    font-size: 1.1em;
+  }
+
+  .order-footer {
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid #eee;
+  }
+
+  .order-buyer {
+    color: #666;
+    font-size: 0.9em;
+  }
+
+  .status-label {
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.9em;
+    font-weight: 500;
+  }
+
+  .status-label.menunggu {
+    background: #fff3cd;
+    color: #856404;
+  }
+
+  .status-label.diproses {
+    background: #cce5ff;
+    color: #004085;
+  }
+
+  .status-label.selesai {
+    background: #d4edda;
+    color: #155724;
+  }
+
+  .view-all {
+    color: #007bff;
+    text-decoration: none;
+    font-size: 0.9em;
+  }
+
+  .view-all:hover {
+    text-decoration: underline;
+  }
+  </style>
+
   <script>
-    // Inisialisasi halaman
+    let allTransactions = [];
+
     document.addEventListener('DOMContentLoaded', () => {
-        console.log('DOM fully loaded. Initializing...'); // Log
-        // Mengambil userId dan role dari localStorage
-        const userIdCheck = localStorage.getItem('loggedInUserId');
-        const userRole = localStorage.getItem('loggedInUserRole');
-        console.log('Initial check: userId in localStorage:', userIdCheck); // Log penting
-        console.log('User role:', userRole); // Log role
+        console.log('DOMContentLoaded fired in seller/dashboard.html');
 
-        // Jika tidak ada userId di localStorage atau role bukan seller, arahkan ke halaman login
-        if (!userIdCheck || userRole !== 'seller') {
-            console.warn('Invalid access: No loggedInUserId found or wrong role. Redirecting to login.');
-            localStorage.clear(); // Clear invalid session
-            window.location.href = "../index.html";
-            return;
-        }
-
-        // Update profile information
+        // Inisialisasi: panggil updateProfileInfo saat DOM dimuat
         updateProfileInfo();
+        fetchSellerStats();
+        fetchSellerTransactions();
+        fetchRecentOrders();
 
-        // Update username in topbar profile element
-        const profileNameElement = document.querySelector('.main-content-topbar .profile-name');
-        if (profileNameElement) {
-            const loggedInUsername = localStorage.getItem('loggedInUsername') || '';
-            profileNameElement.textContent = loggedInUsername;
-            console.log('Topbar profile name updated with:', loggedInUsername); // Log
-        }
+        // The profile dropdown logic is now handled by toggleProfile(event) on the .profile elements
+        // and a global click listener in seller_common.js
 
-        fetchDashboardData(); // Fetch initial data for stats and recent orders
-        fetchSummaryData(); // Fetch data for summary section
     });
 
-    function fetchDashboardData() {
-      // Fetch today's orders, income, and active menu count
-      fetch('../backend/seller_dashboard.php', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'get_stats' })
-      })
-      .then(response => response.json())
-      .then(data => {
+    async function fetchSellerStats() {
+      const userId = localStorage.getItem('loggedInUserId');
+      if (!userId) return;
+
+      try {
+        const response = await fetch('../backend/seller_dashboard.php', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'get_stats', userId: userId })
+        });
+        const data = await response.json();
+
         if (data.status === 'success') {
-          document.getElementById('todayOrders').textContent = data.today_orders;
-          document.getElementById('activeMenu').textContent = `${data.active_menu} Menu`;
-          document.getElementById('confirmedTransactions').textContent = data.confirmed_transactions;
-        }
-      })
-      .catch(error => console.error('Error fetching dashboard stats:', error));
-
-      // Fetch recent orders
-      fetch('../backend/seller_dashboard.php', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'get_recent_orders' })
-      })
-      .then(response => response.json())
-      .then(data => {
-        const ordersList = document.getElementById('recentOrdersList');
-        if (data.status === 'success' && data.orders && data.orders.length > 0) {
-           ordersList.innerHTML = data.orders.map(order => `
-            <div class="order-card">
-              <div class="order-header">
-                <span class="order-id">#${order.id}</span>
-                <span class="order-time">${order.time}</span>
-              </div>
-              <div class="order-items">
-                ${order.items.map(item => `
-                  <div class="order-item">
-                    <span>${item.nama} x${item.jumlah}</span>
-                    <span>Rp ${parseFloat(item.harga_per_item * item.jumlah).toLocaleString('id-ID')}</span>
-                  </div>
-                `).join('')}
-              </div>
-              <div class="order-footer">
-                <span class="order-total">Total: Rp ${parseFloat(order.total).toLocaleString('id-ID')}</span>
-                <span class="status-label ${order.status.toLowerCase()}">${order.status}</span>
-              </div>
-            </div>
-          `).join('');
-        } else if (data.status === 'error') {
-             ordersList.innerHTML = `<p>Gagal memuat pesanan: ${data.message}</p>`;
+          document.getElementById('sellerSaldo').textContent = Rp ${new Intl.NumberFormat('id-ID').format(data.saldo || 0)};
+          document.getElementById('activeMenu').textContent = data.active_menu || 0;
+          document.getElementById('lowStockMenu').textContent = ${data.low_stock_items || 0} item;
+          document.getElementById('confirmedTransactions').textContent = data.confirmed_transactions || 0;
         } else {
-           ordersList.innerHTML = '<p>Tidak ada pesanan terbaru.</p>';
+          console.error('Error fetching stats:', data.message);
         }
-      })
-      .catch(error => {
-         console.error('Error fetching recent orders:', error);
-         document.getElementById('recentOrdersList').innerHTML = '<p>Error memuat pesanan terbaru.</p>';
-      });
-    }
-
-    function fetchSummaryData() {
-       const summaryList = document.getElementById('summaryList');
-       if (!summaryList) return; // Exit if element not found
-
-       summaryList.innerHTML = '<li>Memuat ringkasan...</li>'; // Show loading
-
-       fetch('../backend/seller_dashboard.php', {
-           method: 'POST',
-           headers: { 'Content-Type': 'application/json' },
-           body: JSON.stringify({ action: 'get_summary' })
-       })
-       .then(response => response.json())
-       .then(data => {
-           summaryList.innerHTML = ''; // Clear loading
-           if (data.status === 'success') {
-               // Display pending orders details
-               if (data.pending_orders && data.pending_orders.length > 0) {
-                   summaryList.innerHTML += `<li><strong>${data.pending_orders.length} Pesanan belum dikonfirmasi:</strong></li>`;
-                   data.pending_orders.forEach(order => {
-                       summaryList.innerHTML += `<li>Order #${order.id} (Total: Rp ${parseFloat(order.total).toLocaleString('id-ID')})</li>`;
-                   });
-               } else {
-                    summaryList.innerHTML += '<li>Tidak ada pesanan yang belum dikonfirmasi.</li>';
-               }
-
-               // Display pending payments details
-               if (data.pending_payments && data.pending_payments.length > 0) {
-                  summaryList.innerHTML += `<li><strong>${data.pending_payments.length} Pembayaran menunggu konfirmasi:</strong></li>`;
-                   data.pending_payments.forEach(order => {
-                       summaryList.innerHTML += `<li>Order #${order.id} (Total: Rp ${parseFloat(order.total).toLocaleString('id-ID')})</li>`;
-                   });
-               } else {
-                   summaryList.innerHTML += '<li>Tidak ada pembayaran yang menunggu konfirmasi.</li>';
-               }
-
-               // Add low stock items
-               if (data.low_stock_items && data.low_stock_items.length > 0) {
-                   summaryList.innerHTML += '<li><strong>Menu Stok Hampir Habis:</strong></li>';
-                   data.low_stock_items.forEach(item => {
-                       summaryList.innerHTML += `<li>${item.nama} (${item.stok})</li>`;
-                   });
-                   // Update low stock count in stats card
-                    document.getElementById('lowStockMenu').textContent = `${data.low_stock_items.length} item`;
-               } else {
-                    summaryList.innerHTML += '<li>Tidak ada menu dengan stok rendah.</li>';
-                    document.getElementById('lowStockMenu').textContent = '0 item';
-               }
-
-           } else {
-               summaryList.innerHTML = `<li>Gagal memuat ringkasan: ${data.message}</li>`;
-           }
-       })
-       .catch(error => {
-           console.error('Error fetching summary data:', error);
-           summaryList.innerHTML = '<li>Error memuat ringkasan.</li>';
-       });
-    }
-
-    function updateOrderStatus(orderId, currentStatus) {
-      const newStatus = currentStatus === 'pending' ? 'processing' : currentStatus === 'Menunggu' ? 'processing' : 'completed'; // Allow changing from Menunggu too
-      fetch('../backend/seller_dashboard.php', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          action: 'update_order_status',
-          order_id: orderId,
-          status: newStatus
-        })
-      })
-      .then(response => response.json())
-      .then(data => {
-        if (data.status === 'success') {
-          fetchDashboardData(); // Refresh recent orders and stats (maybe)
-           fetchSummaryData(); // Refresh summary as status changes
-        } else {
-             showError(data.message || 'Gagal memperbarui status pesanan.');
-        }
-      })
-      .catch(error => {
-          console.error('Error updating order status:', error);
-          showError('Error koneksi saat memperbarui status pesanan.');
-      });
-    }
-
-    function showProfileInfo() {
-      document.getElementById('profilePopup').style.display = 'flex';
-      // Pastikan updateProfileInfo dipanggil di sini juga jika profil popup dibuka
-      updateProfileInfo();
-    }
-
-    function showLogout() {
-      const username = localStorage.getItem('loggedInUsername') || 'Pengguna';
-      // Mengisi username di popup sebelum ditampilkan
-      const logoutUsernameElement = document.getElementById('logoutUsername');
-      if (logoutUsernameElement) {
-        logoutUsernameElement.textContent = username;
+      } catch (error) {
+        console.error('Error fetching seller stats:', error);
       }
-      document.getElementById('logoutPopup').style.display = 'flex';
     }
 
-    function hideLogout() {
-      document.getElementById('logoutPopup').style.display = 'none';
+    async function fetchSellerTransactions() {
+      const userId = localStorage.getItem('loggedInUserId');
+      if (!userId) return;
+
+      const transactionsTableBody = document.querySelector('#sellerTransactionsTable tbody');
+      transactionsTableBody.innerHTML = <tr><td colspan="4" class="loading-row"><div class="loading-spinner"></div><span>Memuat riwayat transaksi...</span></td></tr>;
+
+      try {
+        const response = await fetch('../backend/transactions.php', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'get_transactions',
+            userId: userId
+          })
+        });
+        const data = await response.json();
+
+        if (data.status === 'success') {
+          allTransactions = data.transactions;
+          renderTransactions(allTransactions);
+        } else {
+          transactionsTableBody.innerHTML = <tr><td colspan="4" class="no-transactions">Gagal memuat transaksi: ${data.message || 'Unknown error'}</td></tr>;
+          console.error('Error fetching transactions:', data.message);
+        }
+      } catch (error) {
+        transactionsTableBody.innerHTML = <tr><td colspan="4" class="no-transactions">Error memuat riwayat transaksi.</td></tr>;
+        console.error('Error fetching transactions:', error);
+      }
+    }
+
+    function renderTransactions(transactionsToRender) {
+      const transactionsTableBody = document.querySelector('#sellerTransactionsTable tbody');
+      transactionsTableBody.innerHTML = '';
+
+      if (transactionsToRender.length === 0) {
+        transactionsTableBody.innerHTML = <tr><td colspan="4" class="no-transactions">Belum ada riwayat transaksi.</td></tr>;
+        return;
+      }
+
+      transactionsToRender.forEach(transaction => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>${transaction.id}</td>
+          <td>${transaction.keterangan}</td>
+          <td>Rp ${new Intl.NumberFormat('id-ID').format(transaction.jumlah)}</td>
+          <td>${new Date(transaction.created_at).toLocaleString('id-ID')}</td>
+        `;
+        transactionsTableBody.appendChild(row);
+      });
+    }
+
+    function filterTransactions() {
+      const selectedFilter = document.getElementById('transactionFilter').value;
+      let filtered = [];
+      const now = new Date();
+      now.setHours(0, 0, 0, 0);
+
+      if (selectedFilter === 'all') {
+        filtered = allTransactions;
+      } else if (selectedFilter === 'today') {
+        filtered = allTransactions.filter(t => {
+          const transDate = new Date(t.created_at);
+          transDate.setHours(0, 0, 0, 0);
+          return transDate.getTime() === now.getTime();
+        });
+      } else if (selectedFilter === 'week') {
+        const firstDayOfWeek = new Date(now.setDate(now.getDate() - now.getDay())); // Minggu dimulai dari Minggu
+        filtered = allTransactions.filter(t => {
+          const transDate = new Date(t.created_at);
+          return transDate >= firstDayOfWeek;
+        });
+      } else if (selectedFilter === 'month') {
+        const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+        filtered = allTransactions.filter(t => {
+          const transDate = new Date(t.created_at);
+          return transDate >= firstDayOfMonth;
+        });
+      }
+
+      renderTransactions(filtered);
+    }
+
+    async function fetchRecentOrders() {
+      const userId = localStorage.getItem('loggedInUserId');
+      if (!userId) return;
+
+      const recentOrdersList = document.getElementById('recentOrdersList');
+      recentOrdersList.innerHTML = '<p>Memuat pesanan terbaru...</p>';
+
+      try {
+        const response = await fetch('../backend/seller_dashboard.php', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'get_recent_orders', userId: userId })
+        });
+        const data = await response.json();
+
+        if (data.status === 'success' && data.orders) {
+          if (data.orders.length === 0) {
+            recentOrdersList.innerHTML = '<p>Tidak ada pesanan terbaru.</p>';
+            return;
+          }
+
+          let ordersHtml = '';
+          data.orders.forEach(order => {
+            let itemsList = order.items.map(item => ${item.nama} (${item.jumlah})).join(', ');
+            ordersHtml += `
+              <div class="order-item">
+                <div class="order-info">
+                  <p><strong>#${order.id}</strong></p>
+                  <p>${itemsList}</p>
+                  <p>Total: Rp ${new Intl.NumberFormat('id-ID').format(order.total)}</p>
+                  <p>Pembeli: ${order.pembeli_username || 'N/A'}</p>
+                </div>
+                <div class="order-status ${order.status.toLowerCase().replace(' ', '-')}">
+                  ${order.status}
+                </div>
+              </div>
+            `;
+          });
+          recentOrdersList.innerHTML = ordersHtml;
+
+        } else {
+          recentOrdersList.innerHTML = <p>Gagal memuat pesanan terbaru: ${data.message || 'Unknown error'}</p>;
+        }
+      } catch (error) {
+        recentOrdersList.innerHTML = '<p>Error memuat pesanan terbaru.</p>';
+        console.error('Error memuat pesanan terbaru:', error);
+      }
+    }
+
+    function showProfileInfoPopup() {
+        const profileInfoPopup = document.getElementById('profileInfoPopup');
+        profileInfoPopup.style.display = 'flex';
+        // Additional logic to populate profile info if needed
     }
 
     function closePopup(popupId) {
-      document.getElementById(popupId).style.display = 'none';
+        document.getElementById(popupId).style.display = 'none';
     }
 
-    function updateProfileInfo() {
-      // Fungsi ini ada di seller_common.js dan sudah menggunakan localStorage. Kita tidak perlu mendefinisikannya lagi di sini.
-      // Hapus implementasi fungsi ini jika ada duplikasi
-       console.warn("updateProfileInfo called from dashboard.html. Ensure this function is defined in seller_common.js"); // Log untuk memastikan pemanggilan dari common file
+    function showLogout() {
+        const logoutPopup = document.getElementById('logoutPopup');
+        logoutPopup.style.display = 'flex';
     }
 
     function logout() {
-      localStorage.removeItem('loggedInUsername');
-      localStorage.removeItem('loggedInUserRole');
-      window.location.href = 'login.html';
+        localStorage.clear();
+        window.location.href = "../index.html";
     }
-
-    // Basic error popup (re-using buyer's structure or add dedicated if needed)
-    // Assuming showError exists from buyer.js or similar included file, or implement here
-    function showError(message) {
-        alert('Error: ' + message); // Using simple alert for now
-    }
-
-    // Need to add showSuccess if needed for order status updates
-
-    // === PROFILE DROPDOWN & POPUP LOGIC (Mirip buyer/menu.html) ===
-
-    // Function to toggle profile dropdown
-    function toggleProfile() {
-        console.log('Toggling profile dropdown'); // Log
-        const dropdown = document.getElementById('profileDropdown');
-        if(dropdown) { // Pastikan elemen ada
-            dropdown.classList.toggle('active');
-             console.log('Profile dropdown state:', dropdown.classList.contains('active') ? 'Open' : 'Closed'); // Log
-        } else {
-            console.error('Profile dropdown element not found!'); // Log
-        }
-    }
-
-    // Function to show profile info popup (Placeholder - needs backend endpoint for actual data)
-    function showProfileInfoPopup() {
-        console.log('Showing profile info popup'); // Log
-        // Close the dropdown first
-        const profileDropdown = document.getElementById("profileDropdown");
-        if (profileDropdown) profileDropdown.classList.remove("active");
-
-
-        // Get user data (using placeholders or localStorage as available)
-        const username = localStorage.getItem('loggedInUsername') || 'Pengguna KantinITH'; // Default username
-        const role = localStorage.getItem('loggedInUserRole') || 'Penjual'; // Default role
-        // *** PENTING: Ganti dengan pengambilan data profil aktual dari backend/API jika tersedia ***
-        // Anda perlu membuat endpoint backend untuk mengambil detail profil berdasarkan userId/username
-        // Untuk saat ini, gunakan placeholder
-        const email = localStorage.getItem('loggedInUserEmail') || 'Belum Tersedia'; // Placeholder
-        const phone = localStorage.getItem('loggedInUserPhone') || 'Belum Tersedia'; // Placeholder
-        // Tambahkan pengambilan data lain jika diperlukan
-
-        // Populate the popup with data (Assuming a profileInfoPopup element exists as in buyer/menu.html)
-        // NOTE: seller/dashboard.html currently has a simple profilePopup. We might need to adjust its structure.
-        // Menggunakan ID elemen dari struktur popup profil yang baru disalin
-        const profileInfoUserName = document.getElementById('profileInfoUserName');
-        const profileInfoUserRole = document.getElementById('profileInfoUserRole');
-        const profileInfoEmail = document.getElementById('profileInfoEmail');
-        const profileInfoPhone = document.getElementById('profileInfoPhone');
-        const profileInfoPopup = document.getElementById('profileInfoPopup'); // ID popup yang baru
-
-        // Populate the elements if they exist
-        if(profileInfoUserName) profileInfoUserName.textContent = username;
-        if(profileInfoUserRole) profileInfoUserRole.textContent = role;
-        if(profileInfoEmail) profileInfoEmail.textContent = email; // Update dengan email aktual jika ada
-        if(profileInfoPhone) profileInfoPhone.textContent = phone; // Update dengan nomor telepon aktual jika ada
-        // Populate other fields if added in HTML
-
-        // Show the profile info popup
-        if(profileInfoPopup) profileInfoPopup.style.display = 'flex';
-
-        console.log('Profile info popup displayed with data:', {username, role, email, phone}); // Log
-    }
-
-    // Close dropdown when clicking outside (Adjusted for better handling)
-    window.addEventListener('click', function(event) {
-        const profileDropdown = document.getElementById('profileDropdown');
-        const profileIconArea = document.querySelector('.profile'); // Area klik ikon/nama profil
-        // Periksa apakah elemen ada sebelum menggunakan contains
-        const isClickInsideDropdown = profileDropdown && profileDropdown.contains(event.target);
-        const isClickOnProfileArea = profileIconArea && profileIconArea.contains(event.target);
-
-        // Jika klik terjadi di luar dropdown DAN di luar area ikon/nama profil, tutup dropdown
-        if (profileDropdown && profileDropdown.classList.contains('active') && !isClickInsideDropdown && !isClickOnProfileArea) {
-             console.log('Clicked outside profile dropdown, closing.'); // Log
-             profileDropdown.classList.remove('active');
-        }
-    });
-
-     // Close any open popup when clicking outside the popup content itself
-    window.addEventListener('click', function(event) {
-        // Check if the clicked element is a popup overlay and not inside popup content
-        if (event.target.classList && event.target.classList.contains('popup-overlay')) {
-            // Find the popup content within the overlay
-            const popupContent = event.target.querySelector('.popup-content');
-            // If the click was on the overlay itself (and not its content), close it
-            if (!popupContent || !popupContent.contains(event.target)) {
-                 // Get the ID of the overlay and close it using the existing function
-                 const popupId = event.target.id;
-                 if (popupId) {
-                     closePopup(popupId);
-                 }
-            }
-        }
-    });
-
-    // Menutup popup dengan tombol Escape
-    document.addEventListener('keydown', function(e) {
-      if (e.key === 'Escape') {
-        // Close any open popup by checking for the popup-overlay class
-        const openPopup = document.querySelector('.popup-overlay[style*="display: flex"]');
-        if (openPopup) {
-          closePopup(openPopup.id);
-        }
-      }
-    });
-
-    // --- START: New function for confirming seller logout ---
-    function confirmSellerLogout() {
-      console.log('Confirming seller logout...'); // Log
-      // Bersihkan localStorage
-      localStorage.clear();
-      // Arahkan ke halaman login
-      window.location.href = '../index.html'; // Mengarahkan ke index.html (halaman login)
-    }
-    // --- END: New function for confirming seller logout ---
 
   </script>
 
-  <script src="../js/seller_common.js"></script> <!-- Include seller_common.js -->
-
 </body>
-</html> 
+</html>
