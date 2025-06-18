@@ -6,65 +6,83 @@
   <title>KantinITH - Admin - Manajemen Pengguna</title>
   <link rel="stylesheet" href="../css/admin.css">
   <link rel="stylesheet" href="https://unicons.iconscout.com/release/v4.0.8/css/line.css">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+  <script src="../js/admin.js"></script>
 </head>
 <body>
 
-  <div class="admin-container">
-    <!-- Sidebar Admin -->
-    <aside class="admin-sidebar">
-      <div class="sidebar-logo">
-         <img src="../aset/logo.png" alt="Logo">
-         <span class="brand">KantinITH</span>
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <img src="../aset/logo.png" alt="Logo" class="logo">
+        <h2>KantinITH</h2>
       </div>
       <nav>
         <a href="#" class="active"><i class="uil uil-users-alt"></i> Manajemen Pengguna</a>
-        <!-- Tautan lain bisa ditambahkan di sini -->
-        <a href="#" onclick="showLogoutPopup()"><i class="uil uil-signout"></i> Logout</a>
+        <a href="topup.html"><i class="uil uil-plus-circle"></i> Manajemen Top Up</a>
+        <a href="seller_bills.html"><i class="uil uil-bill"></i> Tagihan Penjual</a>
+        <a href="#" id="logout-sidebar" class="logout-link"><i class="uil uil-signout"></i> Logout</a>
       </nav>
     </aside>
 
-    <!-- Konten Utama Admin -->
-    <main class="admin-main-content">
-      <h1>Manajemen Pengguna</h1>
+    <div class="main">
 
-      <!-- Section Admin -->
+      <div class="content-area">
+        <header class="topbar">
+          <div class="topbar-right">
+            <div class="topbar-actions">
+              <div class="profile" onclick="toggleProfile()">
+                <div class="profile-icon"><i class="uil uil-user"></i></div>
+                <span class="profile-name"></span>
+              </div>
+            </div>
+          </div>
+        </header>
+
+        <div class="profile-dropdown" id="profileDropdown">
+          <a href="#" onclick="showProfileInfoPopup(); return false;"><span><i class="uil uil-user"></i></span> Profile</a>
+          <a href="#"><span><i class="uil uil-question-circle"></i></span> Bantuan</a>
+          <a href="#" id="logout-dropdown" class="logout-link"><i class="uil uil-sign-out-alt"></i> Logout</a>
+        </div>
+
+        <h2>Manajemen Pengguna</h2>
+      </div>
+
       <section class="card">
           <div class="section-header">
               <h2>Admin</h2>
               <button class="btn primary-btn" onclick="showAddUserPopup('admin')">
-                  <i class="fas fa-plus"></i> Tambah Admin
+                  <i class="uil uil-plus-circle"></i> Tambah Admin
               </button>
           </div>
           <div class="table-container">
-              <table id="adminTable">
+              <table id="adminTable" class="user-table">
                   <thead>
                       <tr>
                           <th>Username</th>
                           <th>Password</th>
                           <th>Role</th>
+                          <th>Saldo</th>
                           <th>Action</th>
                       </tr>
                   </thead>
                   <tbody>
                       <tr>
-                          <td colspan="4" class="text-center">Loading...</td>
+                          <td colspan="5" class="text-center">Memuat data admin...</td>
                       </tr>
                   </tbody>
               </table>
           </div>
       </section>
 
-      <!-- Section Pembeli -->
       <section class="card">
           <div class="section-header">
               <h2>Pembeli</h2>
-              <button class="btn primary-btn" onclick="showAddUserPopup('pembeli')">
-                  <i class="fas fa-plus"></i> Tambah Pembeli
+              <button class="btn primary-btn" onclick="showAddUserPopup('buyer')">
+                  <i class="uil uil-plus-circle"></i> Tambah Pembeli
               </button>
           </div>
           <div class="table-container">
-              <table id="buyerTable">
+              <table id="buyerTable" class="user-table">
                   <thead>
                       <tr>
                           <th>Username</th>
@@ -83,16 +101,15 @@
           </div>
       </section>
 
-      <!-- Section Penjual -->
       <section class="card">
           <div class="section-header">
               <h2>Penjual</h2>
               <button class="btn primary-btn" onclick="showAddUserPopup('seller')">
-                  <i class="fas fa-plus"></i> Tambah Penjual
+                  <i class="uil uil-plus-circle"></i> Tambah Penjual
               </button>
           </div>
           <div class="table-container">
-              <table id="sellerTable">
+              <table id="sellerTable" class="user-table">
                   <thead>
                       <tr>
                           <th>Username</th>
@@ -111,11 +128,10 @@
           </div>
       </section>
 
-    </main>
+    </div>
   </div>
 
-  <!-- Popup Edit Pengguna -->
-  <div id="editUserPopup" class="popup-overlay" style="display: none;">
+  <div id="editUserPopup" class="popup-overlay">
       <div class="popup-box">
           <div class="popup-header">
               <h3>Edit Pengguna #<span id="editUserId"></span></h3>
@@ -126,32 +142,31 @@
                   <label for="editUsername">Username:</label>
                   <input type="text" id="editUsername" required>
               </div>
-               <div class="form-group">
+              <div class="form-group" id="editSaldoFormGroup">
+                  <label for="editSaldo">Saldo:</label>
+                  <input type="number" id="editSaldo" step="0.01">
+              </div>
+              <div class="form-group">
                   <label for="editRole">Role:</label>
                   <select id="editRole" required>
-                      <option value="pembeli">Pembeli</option>
-                      <option value="seller">Seller</option>
+                      <option value="buyer">Pembeli</option>
+                      <option value="seller">Penjual</option>
                       <option value="admin">Admin</option>
                   </select>
               </div>
               <div class="form-group">
-                  <label for="editSaldo">Saldo:</label>
-                  <input type="number" id="editSaldo" step="0.01" required>
-              </div>
-               <div class="form-group">
                   <label for="editPassword">Ganti Sandi (Kosongkan jika tidak diubah):</label>
                   <input type="password" id="editPassword">
               </div>
               <div class="popup-buttons">
-                  <button type="button" class="btn primary-btn" id="saveUserBtn">Simpan <i class="fas fa-save"></i></button>
-                  <button type="button" class="btn secondary-btn" onclick="closePopup('editUserPopup')">Batal <i class="fas fa-times"></i></button>
+                  <button type="button" class="btn primary-btn" id="saveUserBtn">Simpan</button>
+                  <button type="button" class="btn secondary-btn" onclick="closePopup('editUserPopup')">Batal</button>
               </div>
           </div>
       </div>
   </div>
 
-  <!-- Popup Konfirmasi Hapus -->
-   <div id="deleteUserPopup" class="popup-overlay" style="display: none;">
+   <div id="deleteUserPopup" class="popup-overlay">
       <div class="popup-box">
            <div class="popup-header">
               <h3>Konfirmasi Hapus Pengguna</h3>
@@ -167,23 +182,89 @@
       </div>
   </div>
 
-   <!-- LOGOUT POPUP -->
-   <div id="logoutPopup" class="popup-overlay" style="display: none;">
+   <div id="logoutPopup" class="popup-overlay">
        <div class="popup-box">
            <div class="popup-header">
                <h3>Konfirmasi Keluar</h3>
                <span class="close-popup" onclick="closePopup('logoutPopup')">✖</span>
            </div>
            <div class="popup-content">
-               <p>Apakah Anda yakin ingin keluar?</p>
-               <div class="popup-buttons">
-                   <button type="button" class="btn primary-btn" id="confirmLogoutBtn">Ya, Keluar</button>
-                   <button type="button" class="btn secondary-btn" onclick="closePopup('logoutPopup')">Batal</button>
+               <div class="user-info">
+                    <div class="user-avatar">
+                        <i class="uil uil-user"></i>
+                    </div>
+                    <div class="user-details">
+                        <h4 class="user-name" id="logoutUserName"></h4>
+                        <p class="user-role" id="logoutUserRole"></p>
+                    </div>
+                </div>
+               <p class="logout-message">Apakah Anda yakin ingin keluar dari sistem?</p>
+               <div class="checkout-actions">
+                   <button class="cancel-btn" onclick="closePopup('logoutPopup')">Tidak</button>
+                   <button class="confirm-btn" id="confirmLogoutBtn">Ya, Keluar</button>
                </div>
            </div>
        </div>
    </div>
 
-  <script src="../js/admin.js"></script>
+   <div id="addUserPopup" class="popup-overlay">
+      <div class="popup-box">
+           <div class="popup-header">
+              <h3>Tambah Pengguna Baru</h3>
+              <span class="close-popup" onclick="closePopup('addUserPopup')">✖</span>
+          </div>
+          <div class="popup-content">
+              <div class="form-group">
+                  <label for="addUsername">Username:</label>
+                  <input type="text" id="addUsername" required>
+              </div>
+              <div class="form-group">
+                  <label for="addSaldo">Saldo:</label>
+                  <input type="number" id="addSaldo" step="0.01" value="0">
+              </div>
+              <div class="form-group">
+                  <label for="addPassword">Password:</label>
+                  <input type="password" id="addPassword" required>
+              </div>
+              <div class="popup-buttons">
+                  <button type="button" class="btn primary-btn" id="saveNewUserBtn">Tambah</button>
+                  <button type="button" class="btn secondary-btn" onclick="closePopup('addUserPopup')">Batal</button>
+              </div>
+          </div>
+      </div>
+  </div>
+
+  <!-- Success/Error Message Popups -->
+  <div id="successPopup" class="popup-overlay">
+      <div class="popup-box success-box">
+          <p id="successMessage"></p>
+          <button class="btn primary-btn" onclick="closePopup('successPopup')">OK</button>
+      </div>
+  </div>
+
+  <div id="errorPopup" class="popup-overlay">
+      <div class="popup-box error-box">
+          <p id="errorMessage"></p>
+          <button class="btn danger-btn" onclick="closePopup('errorPopup')">OK</button>
+      </div>
+  </div>
+
+  <script>
+      document.addEventListener('DOMContentLoaded', () => {
+          // Fetch and display admin stats on page load
+          fetchAdminStatsManageUsers();
+
+          // --- Reverted sidebar active link logic ---
+          const currentPath = window.location.pathname.split('/').pop();
+          const sidebarLinks = document.querySelectorAll('.sidebar nav > a');
+          sidebarLinks.forEach(link => {
+              const linkPath = link.getAttribute('href');
+              if (linkPath === currentPath) {
+                  link.classList.add('active');
+              }
+          });
+          // --- End reverted sidebar active link logic ---
+      });
+  </script>
 </body>
 </html> 

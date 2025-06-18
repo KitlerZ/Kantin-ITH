@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tagihan Penjual - KantinITH</title>
+    <link rel="stylesheet" href="../css/admin.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://unicons.iconscout.com/release/v4.0.8/css/line.css">
+    <script src="../js/admin.js"></script>
+</head>
+<body>
+    <div class="layout">
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <img src="../aset/logo.png" alt="KantinITH Logo" class="logo">
+                <h2>KantinITH</h2>
+            </div>
+            <nav>
+                <a href="manage_users.html"><i class="uil uil-users-alt"></i> Manajemen Pengguna</a>
+                <a href="topup.html"><i class="uil uil-plus-circle"></i> Manajemen Top Up</a>
+                <a href="#" class="active"><i class="uil uil-bill"></i> Tagihan Penjual</a>
+                <a href="#" id="logout-sidebar" class="logout-link"><i class="uil uil-signout"></i> Logout</a>
+            </nav>
+        </aside>
+
+        <div class="main">
+            <div class="content-area">
+                <header class="topbar">
+                    <div class="topbar-right">
+                        <div class="saldo-box">
+                            Saldo Admin: <span id="admin-saldo">Rp 0</span>
+                        </div>
+                        <div class="topbar-actions">
+                            <div class="profile" onclick="toggleProfile()">
+                                <div class="profile-icon">👤</div>
+                                <span class="profile-name"></span>
+                            </div>
+                        </div>
+                    </div>
+                </header>
+
+                <div class="dashboard-content">
+                    <h2>Tagihan Penjual</h2>
+                    
+                    <div class="action-buttons">
+                        <button onclick="showAddBillPopup()" class="generate-bills-btn primary-btn">
+                            <i class="uil uil-plus-circle"></i> Tambah Tagihan Baru
+                        </button>
+                    </div>
+
+                    <div class="bills-container">
+                        <div class="filter-section">
+                            <select id="filter-status" onchange="loadBills()">
+                                <option value="all">Semua Status</option>
+                                <option value="pending">Belum Dibayar</option>
+                                <option value="paid">Sudah Dibayar</option>
+                            </select>
+                            <select id="filter-month" onchange="loadBills()">
+                                <option value="all">Semua Bulan</option>
+                                <option value="1">Januari</option>
+                                <option value="2">Februari</option>
+                                <option value="3">Maret</option>
+                                <option value="4">April</option>
+                                <option value="5">Mei</option>
+                                <option value="6">Juni</option>
+                                <option value="7">Juli</option>
+                                <option value="8">Agustus</option>
+                                <option value="9">September</option>
+                                <option value="10">Oktober</option>
+                                <option value="11">November</option>
+                                <option value="12">Desember</option>
+                            </select>
+                        </div>
+
+                        <div id="bills-list">
+                            <!-- Bills will be loaded here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add New Bill Popup -->
+    <div id="addBillPopup" class="popup-overlay">
+        <div class="popup-box">
+            <div class="popup-header">
+                <h3>Tambah Tagihan Baru</h3>
+                <span class="close-popup" onclick="closePopup('addBillPopup')">✖</span>
+            </div>
+            <div class="popup-content">
+                <div class="form-group">
+                    <label for="billSeller">Pilih Penjual:</label>
+                    <select id="billSeller" required>
+                        <!-- Sellers will be loaded here via JavaScript -->
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="billAmount">Jumlah Tagihan (Rp):</label>
+                    <input type="number" id="billAmount" step="1000" min="0" value="0" required>
+                </div>
+                <div class="form-group">
+                    <label for="billMonth">Periode Bulan:</label>
+                    <select id="billMonth" required>
+                        <option value="1">Januari</option>
+                        <option value="2">Februari</option>
+                        <option value="3">Maret</option>
+                        <option value="4">April</option>
+                        <option value="5">Mei</option>
+                        <option value="6">Juni</option>
+                        <option value="7">Juli</option>
+                        <option value="8">Agustus</option>
+                        <option value="9">September</option>
+                        <option value="10">Oktober</option>
+                        <option value="11">November</option>
+                        <option value="12">Desember</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="billYear">Periode Tahun:</label>
+                    <input type="number" id="billYear" required min="2023" value="2024">
+                </div>
+                <div class="popup-buttons">
+                    <button type="button" class="btn primary-btn" id="saveNewBillBtn">Tambah Tagihan</button>
+                    <button type="button" class="btn secondary-btn" onclick="closePopup('addBillPopup')">Batal</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Success/Error Message Popups -->
+    <div id="successPopup" class="popup-overlay">
+        <div class="popup-box success-box">
+            <p id="successMessage"></p>
+            <button class="btn primary-btn" onclick="closePopup('successPopup')">OK</button>
+        </div>
+    </div>
+
+    <div id="errorPopup" class="popup-overlay">
+        <div class="popup-box error-box">
+            <p id="errorMessage"></p>
+            <button class="btn danger-btn" onclick="closePopup('errorPopup')">OK</button>
+        </div>
+    </div>
+
+    <!-- Confirm Pay Bill Popup (New) -->
+    <div id="payBillPopup" class="popup-overlay">
+        <div class="popup-box confirm-box">
+            <div class="popup-header">
+                <h3>Konfirmasi Pembayaran Tagihan</h3>
+                <span class="close-popup" onclick="closePopup('payBillPopup')">✖</span>
+            </div>
+            <div class="popup-content">
+                <p>Apakah Anda yakin ingin menandai tagihan ini sebagai 'Sudah Dibayar'?</p>
+                <div class="popup-buttons">
+                    <button type="button" class="btn primary-btn" id="confirmPayBillBtn" onclick="confirmPayBill()">Ya, Bayar</button>
+                    <button type="button" class="btn secondary-btn" onclick="closePopup('payBillPopup')">Batal</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Popup Logout (copy dari topup.html) -->
+    <div id="logoutPopup" class="popup-overlay">
+        <div class="popup-box">
+            <div class="popup-header">
+                <h3>Konfirmasi Keluar</h3>
+                <span class="close-popup" onclick="closePopup('logoutPopup')">✖</span>
+            </div>
+            <div class="popup-content">
+                <div class="user-info">
+                    <div class="user-avatar">
+                        <i class="uil uil-user"></i>
+                    </div>
+                    <div class="user-details">
+                        <h4 class="user-name" id="logoutUserName"></h4>
+                        <p class="user-role" id="logoutUserRole"></p>
+                    </div>
+                </div>
+                <p class="logout-message">
+                    Apakah Anda yakin ingin keluar dari sistem?
+                </p>
+                <div class="checkout-actions">
+                    <button class="cancel-btn" onclick="closePopup('logoutPopup')">Tidak</button>
+                    <button class="confirm-btn" id="confirmLogoutBtn">Ya, Keluar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const userIdCheck = localStorage.getItem('loggedInUserId');
+            const userRole = localStorage.getItem('loggedInUserRole');
+
+            // --- Reverted sidebar active link logic ---
+            const currentPath = window.location.pathname.split('/').pop();
+            const sidebarLinks = document.querySelectorAll('.sidebar nav > a');
+            sidebarLinks.forEach(link => {
+                const linkPath = link.getAttribute('href');
+                if (linkPath === currentPath) {
+                    link.classList.add('active');
+                } else {
+                    link.classList.remove('active'); // Pastikan hanya satu yang aktif
+                }
+            });
+            // --- End reverted sidebar active link logic ---
+
+            if (!userIdCheck || userRole !== 'admin') {
+                localStorage.clear();
+                window.location.href = "../index.html";
+                return;
+            }
+
+            updateAdminSaldo();
+            loadBills();
+
+            const profileNameSpan = document.querySelector('.profile-name');
+            const loggedInUsername = localStorage.getItem('loggedInUsername');
+            if (profileNameSpan && loggedInUsername) {
+                profileNameSpan.textContent = loggedInUsername;
+            }
+
+            document.getElementById('saveNewBillBtn').addEventListener('click', handleSaveNewBill);
+
+            // Event handler untuk logout popup (sidebar dan dropdown)
+            document.querySelectorAll('.logout-link').forEach(function(logoutLink) {
+                logoutLink.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const popup = document.getElementById('logoutPopup');
+                    if (popup) {
+                        // Set nama dan role jika ada
+                        const userName = localStorage.getItem('loggedInUsername') || '';
+                        const userRole = localStorage.getItem('loggedInUserRole') || '';
+                        const nameEl = document.getElementById('logoutUserName');
+                        const roleEl = document.getElementById('logoutUserRole');
+                        if (nameEl) nameEl.textContent = userName;
+                        if (roleEl) roleEl.textContent = userRole;
+                        popup.classList.add('active');
+                    }
+                });
+            });
+            // Event handler tombol konfirmasi logout
+            const confirmLogoutBtn = document.getElementById('confirmLogoutBtn');
+            if (confirmLogoutBtn) {
+                confirmLogoutBtn.addEventListener('click', async function() {
+                    try {
+                        const response = await fetch('../backend/login.php', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ action: 'logout' })
+                        });
+                        const data = await response.json();
+                        if (data.status === 'success') {
+                            localStorage.clear();
+                            window.location.href = '../index.html';
+                        } else {
+                            alert('Gagal logout: ' + (data.message || 'Terjadi kesalahan.'));
+                        }
+                    } catch (error) {
+                        alert('Terjadi error koneksi saat logout.');
+                        localStorage.clear();
+                        window.location.href = '../index.html';
+                    }
+                });
+            }
+        });
+
+        function updateAdminSaldo() {
+            const userId = localStorage.getItem('loggedInUserId');
+            if (!userId) return;
+
+            fetch('../backend/admin_saldo.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    action: 'get_admin_saldo',
+                    userId: userId 
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    document.getElementById('admin-saldo').textContent = 
+                        `Rp ${parseFloat(data.saldo).toLocaleString('id-ID')}`;
+                }
+            })
+            .catch(error => console.error('Error:', error));
+        }
+
+        window.closePopup = function(popupId) {
+            const popup = document.getElementById(popupId);
+            if (popup) {
+                popup.classList.remove('active');
+            }
+        }
+
+        window.showSuccess = function(message) {
+            document.getElementById('successMessage').textContent = message;
+            document.getElementById('successPopup').classList.add('active');
+        }
+
+        window.showError = function(message) {
+            document.getElementById('errorMessage').textContent = message;
+            document.getElementById('errorPopup').classList.add('active');
+        }
+
+        async function loadSellersForDropdown() {
+            try {
+                const response = await fetch('../backend/admin_manage_users.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'get_all_users' })
+                });
+                const data = await response.json();
+
+                if (data.status === 'success' && Array.isArray(data.users)) {
+                    const sellerSelect = document.getElementById('billSeller');
+                    sellerSelect.innerHTML = ''; // Clear existing options
+                    data.users.forEach(user => {
+                        if (user.role === 'seller') { // Filter for sellers
+                            const option = document.createElement('option');
+                            option.value = user.id;
+                            option.textContent = user.username;
+                            sellerSelect.appendChild(option);
+                        }
+                    });
+                } else {
+                    console.error('Error loading sellers:', data.message);
+                }
+            } catch (error) {
+                console.error('Error fetching sellers:', error);
+            }
+        }
+
+        window.showAddBillPopup = function() {
+            loadSellersForDropdown();
+            document.getElementById('addBillPopup').classList.add('active');
+        }
+
+        // This function will now fetch from admin_manage_bills.php
+        function loadBills() {
+            const status = document.getElementById('filter-status').value;
+            const month = document.getElementById('filter-month').value;
+
+            fetch('../backend/admin_manage_bills.php', { // Changed to admin_manage_bills.php
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    action: 'get_all_bills',
+                    status: status,
+                    month: month
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    const billsList = document.getElementById('bills-list');
+                    let html = `
+                        <div class="table-responsive">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Penjual</th>
+                                        <th>Periode</th>
+                                        <th>Jumlah</th>
+                                        <th>Status</th>
+                                        <th>Tanggal Dibuat</th>
+                                        <th>Tanggal Dibayar</th>
+                                        <th>Aksi</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                    `;
+                    
+                    if (data.bills.length > 0) {
+                        const monthNames = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 
+                                             'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+                        
+                        data.bills.forEach(bill => {
+                            const statusClass = bill.status === 'paid' ? 'status-paid' : 'status-pending';
+                            const statusText = bill.status === 'paid' ? 'Lunas' : 'Belum Lunas';
+                            const createdDate = new Date(bill.tanggal).toLocaleDateString('id-ID');
+                            const paidDate = bill.dibayar ? new Date(bill.dibayar).toLocaleDateString('id-ID') : '-';
+                            
+                            html += `
+                                <tr>
+                                    <td>${bill.id}</td>
+                                    <td>${bill.seller_username}</td>
+                                    <td>${monthNames[bill.periode_bulan - 1]} ${bill.periode_tahun}</td>
+                                    <td>Rp ${parseFloat(bill.total).toLocaleString('id-ID')}</td>
+                                    <td><span class="status-badge ${statusClass}">${statusText}</span></td>
+                                    <td>${createdDate}</td>
+                                    <td>${paidDate}</td>
+                                    <td>
+                                        ${bill.status === 'pending' ? 
+                                            `<button onclick="markAsPaid(${bill.id})" class="action-btn primary-btn">Tandai Lunas</button>` :
+                                            `<span class="paid-date">Dibayar: ${paidDate}</span>`
+                                        }
+                                    </td>
+                                </tr>
+                            `;
+                        });
+                    } else {
+                        html += `
+                                <tr>
+                                    <td colspan="8" class="no-data">Tidak ada tagihan ditemukan</td>
+                                </tr>
+                        `;
+                    }
+                    
+                    html += `
+                                </tbody>
+                            </table>
+                        </div>
+                    `;
+                    billsList.innerHTML = html;
+                }
+            })
+            .catch(error => console.error('Error:', error));
+        }
+
+        window.markAsPaid = function(billId) {
+            if (!confirm('Apakah Anda yakin ingin menandai tagihan ini sebagai lunas?')) {
+                return;
+            }
+
+            fetch('../backend/admin_manage_bills.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    action: 'update_bill_status',
+                    bill_id: billId,
+                    new_status: 'paid'
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    showSuccess('Tagihan berhasil ditandai sebagai lunas.');
+                    loadBills();
+                } else {
+                    showError(`Gagal menandai tagihan: ${data.message}`);
+                }
+            })
+            .catch(error => console.error('Error:', error));
+        }
+
+        async function handleSaveNewBill() {
+            const btn = document.getElementById('saveNewBillBtn');
+            btn.disabled = true;
+            const sellerId = document.getElementById('billSeller').value;
+            const billAmount = parseFloat(document.getElementById('billAmount').value);
+            const billMonth = parseInt(document.getElementById('billMonth').value);
+            const billYear = parseInt(document.getElementById('billYear').value);
+
+            if (!sellerId || isNaN(billAmount) || billAmount <= 0 || !billMonth || !billYear) {
+                showError('Harap lengkapi semua kolom dengan benar (Jumlah Tagihan > 0).');
+                btn.disabled = false;
+                return;
+            }
+
+            try {
+                const response = await fetch('../backend/admin_manage_bills.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        action: 'add_bill',
+                        seller_id: sellerId,
+                        total: billAmount,
+                        periode_bulan: billMonth,
+                        periode_tahun: billYear
+                    })
+                });
+                const data = await response.json();
+
+                if (data.status === 'success') {
+                    showSuccess('Tagihan berhasil ditambahkan.');
+                    closePopup('addBillPopup');
+                    loadBills(); // Refresh the bill list
+                } else {
+                    showError(`Gagal menambahkan tagihan: ${data.message}`);
+                }
+            } catch (error) {
+                console.error('Error adding new bill:', error);
+                showError('Terjadi kesalahan saat menambahkan tagihan.');
+            }
+            btn.disabled = false;
+        }
+    </script>
+</body>
+</html>
