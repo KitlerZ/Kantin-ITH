@@ -119,12 +119,10 @@
   </div>
 
   <script>
-    // Mengambil data user dari localStorage
     document.addEventListener('DOMContentLoaded', () => {
       const userNameElement = document.getElementById('userName');
       const userRoleElement = document.getElementById('userRole');
 
-      // Menggunakan kunci yang konsisten
       const loggedInUsername = localStorage.getItem('loggedInUsername') || '';
       const loggedInUserRole = localStorage.getItem('loggedInUserRole') || '';
 
