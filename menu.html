@@ -2,63 +2,133 @@
 <html lang="id">
 <head>
   <meta charset="UTF-8">
-  <title>Menu Pembeli - KantinITH</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Menu - KantinITH</title>
   <link rel="stylesheet" href="../css/style.css">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
 </head>
 <body>
+  <script>
+    // Check if user is logged in
+    document.addEventListener('DOMContentLoaded', function() {
+      const userId = localStorage.getItem('loggedInUserId');
+      const userRole = localStorage.getItem('loggedInUserRole');
+
+      if (!userId) {
+        // Redirect to login page if not logged in
+        localStorage.clear();
+        window.location.href = "../index.html";
+        return;
+      }
+    });
+  </script>
+
   <div class="container">
     <div class="menu-header">
       <h2>Menu Makanan</h2>
       <div>Saldo: <span id="saldo">Rp 0</span></div>
-      <button onclick="logout()">Logout <i class="fas fa-sign-out-alt"></i></button>
+      <button onclick="logout()">Logout</button>
     </div>
 
-    <div id="menu-list" class="menu-list"></div>
+    <div id="menu-list" class="menu-list">
+      <p class="loading">Memuat menu...</p>
+    </div>
 
     <h3>Keranjang</h3>
     <ul id="cart-list"></ul>
     <p>Total: Rp <span id="total">0</span></p>
-    <button onclick="checkout()">Checkout <i class="fas fa-shopping-cart"></i></button>
+    <button onclick="confirmCheckout()" id="checkoutBtn" disabled>Checkout</button>
     <p id="msg" class="info-msg"></p>
   </div>
 
   <script>
-    const username = sessionStorage.getItem("username");
+    const username = localStorage.getItem("loggedInUsername");
     if (!username) location.href = "../index.html";
 
     let cart = [];
+    let currentBalance = 0;
 
     function fetchSaldo() {
+      const userId = localStorage.getItem('loggedInUserId');
+      if (!userId) {
+        document.getElementById("saldo").textContent = "Rp 0";
+        return;
+      }
+
       fetch("../backend/login.php", {
         method: "POST",
         headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({ action: "get_saldo", username })
+        body: JSON.stringify({ 
+          action: "get_saldo",
+          userId: userId
+        })
       })
-      .then(res => res.json())
+      .then(response => {
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.json();
+      })
       .then(data => {
-        document.getElementById("saldo").textContent = "Rp " + data.saldo;
+        if (data.status === "success") {
+          currentBalance = parseFloat(data.saldo || data.balance || 0);
+          document.getElementById("saldo").textContent = "Rp " + currentBalance.toLocaleString('id-ID');
+        } else {
+          console.error('Error fetching saldo:', data.message || 'Unknown error');
+          document.getElementById("saldo").textContent = "Rp 0";
+        }
+      })
+      .catch(error => {
+        console.error('Error:', error);
+        document.getElementById("saldo").textContent = "Rp 0";
       });
     }
 
     function fetchMenu() {
+      const menuList = document.getElementById("menu-list");
+      menuList.innerHTML = '<p class="loading">Memuat menu...</p>';
+
       fetch("../backend/login.php", {
         method: "POST",
         headers: {'Content-Type': 'application/json'},
         body: JSON.stringify({ action: "get_menu" })
       })
-      .then(res => res.json())
-      .then(menu => {
-        const list = document.getElementById("menu-list");
-        menu.forEach(item => {
-          const div = document.createElement("div");
-          div.className = "menu-card";
-          div.innerHTML = `
-            <h4>${item.nama}</h4>
-            <p>Rp ${item.harga}</p>
-            <button onclick='addToCart(${item.id}, "${item.nama}", ${item.harga})'>Tambah</button>`;
-          list.appendChild(div);
-        });
+      .then(response => {
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.json();
+      })
+      .then(data => {
+        console.log('Menu data:', data); // Debug log
+        if (data.status === "success" && Array.isArray(data.menu)) {
+          if (data.menu.length === 0) {
+            menuList.innerHTML = '<p class="no-menu">Tidak ada menu yang tersedia saat ini</p>';
+            return;
+          }
+
+          menuList.innerHTML = ""; // Clear existing menu
+          data.menu.forEach(item => {
+            const div = document.createElement("div");
+            div.className = "menu-card";
+            div.innerHTML = `
+              <img src="../aset/default-menu.png" alt="${item.nama}" onerror="this.src='../aset/default-menu.png'">
+              <h4>${item.nama}</h4>
+              <p class="seller">Penjual: ${item.image.pngnama_penjual}</p>
+              <p class="price">Rp ${parseInt(item.harga).toLocaleString('id-ID')}</p>
+              <p class="stock">Stok: ${item.stok}</p>
+              <button onclick='addToCart(${item.id}, "${item.nama}", ${item.harga})' ${item.stok <= 0 ? 'disabled' : ''}>
+                ${item.stok <= 0 ? 'Stok Habis' : 'Tambah ke Keranjang'}
+              </button>`;
+            menuList.appendChild(div);
+          });
+        } else {
+          menuList.innerHTML = '<p class="error">Gagal memuat menu: ' + (data.message || 'Unknown error') + '</p>';
+        }
+      })
+      .catch(error => {
+        console.error('Error fetching menu:', error);
+        menuList.innerHTML = '<p class="error">Error: ' + error.message + '</p>';
       });
     }
 
@@ -75,45 +145,92 @@
 
     function renderCart() {
       const list = document.getElementById("cart-list");
+      const checkoutBtn = document.getElementById("checkoutBtn");
       list.innerHTML = "";
       let total = 0;
+      
       cart.forEach(item => {
         const li = document.createElement("li");
         li.textContent = `${item.nama} x${item.jumlah} - Rp ${item.subtotal}`;
         list.appendChild(li);
         total += item.subtotal;
       });
+      
       document.getElementById("total").textContent = total;
+      checkoutBtn.disabled = cart.length === 0;
+    }
+
+    function confirmCheckout() {
+      const total = cart.reduce((sum, item) => sum + item.subtotal, 0);
+      
+      if (total > currentBalance) {
+        showMessage("Saldo tidak mencukupi untuk melakukan checkout", true);
+        return;
+      }
+
+      if (confirm(`Total pesanan: Rp ${total}\nLanjutkan checkout?`)) {
+        checkout();
+      }
     }
 
     function checkout() {
+      if (cart.length === 0) {
+        showMessage("Keranjang kosong", true);
+        return;
+      }
+
+      const checkoutBtn = document.getElementById("checkoutBtn");
+      checkoutBtn.disabled = true;
+      checkoutBtn.textContent = "Memproses...";
+
       fetch("../backend/login.php", {
         method: "POST",
         headers: {'Content-Type': 'application/json'},
         body: JSON.stringify({
           action: "checkout",
-          username,
+          userId: localStorage.getItem('loggedInUserId'),
           items: cart
         })
       })
       .then(res => res.json())
       .then(data => {
-        document.getElementById("msg").textContent = data.message;
         if (data.status === "success") {
+          showMessage(data.message);
           cart = [];
           renderCart();
-          fetchSaldo();
+          currentBalance = data.newBalance;
+          document.getElementById("saldo").textContent = "Rp " + currentBalance;
+        } else {
+          showMessage(data.message, true);
         }
+      })
+      .catch(error => {
+        showMessage("Error: " + error.message, true);
+      })
+      .finally(() => {
+        checkoutBtn.disabled = false;
+        checkoutBtn.textContent = "Checkout";
       });
     }
 
-    function logout() {
-      sessionStorage.clear();
-      location.href = "../index.html";
+    function showMessage(message, isError = false) {
+      const msg = document.getElementById("msg");
+      msg.textContent = message;
+      msg.style.color = isError ? "#dc3545" : "#28a745";
+      msg.style.display = "block";
     }
 
+    function logout() {
+      if (confirm("Apakah Anda yakin ingin keluar?")) {
+        localStorage.clear();
+        location.href = "../index.html";
+      }
+    }
+
+    // Initial load
     fetchSaldo();
     fetchMenu();
   </script>
 </body>
 </html>
+
