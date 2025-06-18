@@ -1,26 +1,15 @@
-// File: js/seller_orders.js
-
 document.addEventListener('DOMContentLoaded', () => {
-    // Check if user is logged in and is a seller (optional, already in seller_common.js)
-    // const role = sessionStorage.getItem('role');
-    // if (!role || role !== 'seller') {
-    //   window.location.href = '../index.html';
-    //   return;
-    // }
-
     fetchOrders();
     setupEventListeners();
-    updateProfileInfo(); // Assuming updateProfileInfo is in seller_common.js
+    updateProfileInfo();
 });
 
 function setupEventListeners() {
-    // Event delegation for action buttons in the table
     const ordersTableBody = document.querySelector('#ordersTable tbody');
     if (ordersTableBody) {
         ordersTableBody.addEventListener('click', handleTableActions);
     }
 
-     // Close popups by clicking outside
     document.querySelectorAll('.popup-overlay').forEach(overlay => {
         overlay.addEventListener('click', (e) => {
             if (e.target === overlay) {
@@ -29,25 +18,41 @@ function setupEventListeners() {
         });
     });
 
-    // Save status button in update status popup
     const saveStatusBtn = document.getElementById('saveOrderStatusBtn');
     if (saveStatusBtn) {
         saveStatusBtn.addEventListener('click', handleSaveOrderStatus);
     }
+
+    const orderStatusFilter = document.getElementById('orderStatusFilter');
+    if (orderStatusFilter) {
+        orderStatusFilter.addEventListener('change', fetchOrders);
+    }
 }
 
-// --- FETCH ORDERS ---
 async function fetchOrders() {
     const ordersTableBody = document.querySelector('#ordersTable tbody');
     if (!ordersTableBody) return;
 
     ordersTableBody.innerHTML = '<tr><td colspan="5">Memuat daftar pesanan...</td></tr>';
 
+    const sellerId = localStorage.getItem('loggedInUserId'); // Assuming userId is stored in localStorage
+    const filterStatus = document.getElementById('orderStatusFilter').value; // Get selected filter
+
+    if (!sellerId) {
+        ordersTableBody.innerHTML = '<tr><td colspan="5">User ID penjual tidak ditemukan.</td></tr>';
+        console.error('loggedInUserId not found in localStorage.');
+        return;
+    }
+
     try {
-        const response = await fetch('../backend/seller_dashboard.php', { // Using seller_dashboard.php for fetching orders for now
+        const response = await fetch('../backend/orders.php', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ action: 'get_recent_orders' }) // Using the existing get_recent_orders action
+            body: JSON.stringify({ 
+                action: 'get_seller_orders',
+                userId: sellerId,
+                filterStatus: filterStatus
+            })
         });
         const data = await response.json();
 
@@ -62,15 +67,13 @@ async function fetchOrders() {
     }
 }
 
-// --- DISPLAY ORDERS ---
 function displayOrders(orders) {
     const ordersTableBody = document.querySelector('#ordersTable tbody');
     if (!ordersTableBody) return;
 
-    ordersTableBody.innerHTML = ''; // Clear loading/placeholder row
+    ordersTableBody.innerHTML = '';
 
     if (orders.length === 0) {
-        // colspan 6 karena ada 6 kolom header di thead
         ordersTableBody.innerHTML = '<tr><td colspan="6">Belum ada pesanan.</td></tr>';
         return;
     }
@@ -78,44 +81,38 @@ function displayOrders(orders) {
     orders.forEach(order => {
         const row = document.createElement('tr');
 
-        // Hitung total jumlah item dalam pesanan ini
         const totalItems = order.items ? order.items.reduce((sum, item) => sum + item.jumlah, 0) : 0;
-        // Gabungkan nama-nama item
         const itemNames = order.items && order.items.length > 0 ? order.items.map(item => item.nama).join(', ') : '-';
 
-        // Buat sel <td> sesuai dengan header <th> di seller/daftar_pesanan.html (ID, Nama Pesanan, Total Harga, Status, Aksi)
+        const statusClass = order.status ? order.status.toLowerCase().replace(' ', '-') : '';
+
         row.innerHTML = `
             <td>#${order.id}</td>
             <td>${itemNames} (${totalItems} item)</td>
             <td>Rp ${parseFloat(order.total).toLocaleString('id-ID')}</td>
-            <td><span class="status-label ${order.status.toLowerCase().replace(' ', '-')}">${order.status}</span></td>
+            <td><span class="status-label ${statusClass}">${order.status}</span></td>
             <td>
-               ${order.status !== 'Selesai' && order.status !== 'Dibatalkan' ? `<button class="btn small-btn icon-btn primary-btn status-btn" data-id="${order.id}"><i class="uil uil-sync"></i></button>` : ''}
+               ${order.status !== 'Selesai' && order.status !== 'Dibatalkan' ? `<button class="btn small-btn primary-btn status-btn" data-id="${order.id}">Update Status</button>` : ''}
             </td>
         `;
         ordersTableBody.appendChild(row);
     });
 }
 
-// --- HANDLE TABLE ACTIONS (Update Status) ---
 function handleTableActions(event) {
     const target = event.target;
 
-    // Handle Update Status Button Click
     if (target.classList.contains('status-btn')) {
         const orderId = target.dataset.id;
         const currentStatus = target.closest('tr').querySelector('.status-label').textContent;
         
-        // Update the popup content
         const updateStatusOrderId = document.getElementById('updateStatusOrderId');
         if (updateStatusOrderId) {
             updateStatusOrderId.textContent = orderId;
         }
         
-        // Set current status in the dropdown
         const statusSelect = document.getElementById('newOrderStatus');
         if (statusSelect) {
-            // Find the option that matches the current status
             const options = Array.from(statusSelect.options);
             const matchingOption = options.find(option => 
                 option.value.toLowerCase() === currentStatus.toLowerCase()
@@ -126,13 +123,11 @@ function handleTableActions(event) {
             }
         }
         
-        // Show the popup
         const updateStatusPopup = document.getElementById('updateStatusPopup');
         if (updateStatusPopup) {
             updateStatusPopup.style.display = 'flex';
         }
         
-        // Store order ID for saving
         const saveStatusBtn = document.getElementById('saveOrderStatusBtn');
         if (saveStatusBtn) {
             saveStatusBtn.dataset.orderId = orderId;
@@ -140,29 +135,30 @@ function handleTableActions(event) {
     }
 }
 
-// --- HANDLE SAVE ORDER STATUS ---
 async function handleSaveOrderStatus(event) {
     const orderId = event.target.dataset.orderId;
     const newStatus = document.getElementById('newOrderStatus').value;
+    const sellerId = localStorage.getItem('loggedInUserId');
 
-    if (!orderId || !newStatus) return;
+    if (!orderId || !newStatus || !sellerId) return;
 
     try {
-        const response = await fetch('../backend/seller_dashboard.php', { // Using seller_dashboard.php for updating status
+        const response = await fetch('../backend/orders.php', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 action: 'update_order_status',
                 order_id: orderId,
-                status: newStatus
+                status: newStatus,
+                userId: sellerId
             })
         });
         const data = await response.json();
 
         if (data.status === 'success') {
-            alert(data.message); // Use alert for now
-            closePopup('updateStatusPopup'); // Close the popup
-            fetchOrders(); // Refresh the order list
+            alert(data.message);
+            closePopup('updateStatusPopup');
+            fetchOrders();
         } else {
             alert('Gagal mengupdate status pesanan: ' + (data.message || 'Unknown error'));
         }
@@ -172,10 +168,33 @@ async function handleSaveOrderStatus(event) {
     }
 }
 
-// --- POPUP FUNCTIONS (Assuming these are common in seller_common.js) ---
-// function showLogout() { ... }
-// function closePopup(popupId) { ... }
-// function updateProfileInfo() { ... }
-// function logout() { ... } 
+function showLogout() {
+    document.getElementById('logoutPopup').style.display = 'flex';
+}
 
-document.getElementById('newOrderStatus').value = currentStatus; // Try to set current stat 
+function closePopup(popupId) {
+    document.getElementById(popupId).style.display = 'none';
+}
+
+function updateProfileInfo() {
+    const username = localStorage.getItem('loggedInUsername') || 'User'; // Changed to localStorage
+    const role = localStorage.getItem('loggedInUserRole') || 'Unknown Role'; // Changed to localStorage
+
+    const profileUsernameSpan = document.getElementById('profileUsername');
+    const profileRoleSpan = document.getElementById('profileRole');
+    const topbarUsernameSpan = document.querySelector('.navbar .profile-name'); // Corrected selector
+    // Removed sidebarLogoutLink as it's not present in the HTML
+
+    if (profileUsernameSpan) profileUsernameSpan.textContent = username;
+    if (profileRoleSpan) profileRoleSpan.textContent = role;
+
+    if(topbarUsernameSpan) {
+        topbarUsernameSpan.textContent = username; // Update the top right name
+    }
+    // Removed logic for sidebarLogoutLink and topbarUsernameSpan if they don't exist as per HTML
+}
+
+function logout() {
+    localStorage.clear(); // Changed to localStorage
+    window.location.href = '../index.html';
+} 

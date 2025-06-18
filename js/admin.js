@@ -1,29 +1,82 @@
-// File: js/admin.js
-
 document.addEventListener('DOMContentLoaded', () => {
-    // Pastikan pengguna login dan role-nya admin (opsional tapi disarankan)
-    checkAdminAuth(); // Panggil fungsi otentikasi admin
+    checkAdminAuth();
+    updateProfileInfo();
 
-    fetchUsers(); // Ambil dan tampilkan data pengguna saat halaman dimuat
-    setupEventListeners(); // Setup event listeners untuk tombol aksi dan popups
+    // Check if the current page is manage_users.html before setting up user management listeners and fetching users
+    if (window.location.pathname.includes('/admin/manage_users.html')) {
+        fetchUsers();
+        setupUserManagementEventListeners(); // New function for specific listeners
+    } else if (window.location.pathname.includes('/admin/topup.html')) {
+        loadAdminTopups(); // Load topup data for admin
+        setupAdminTopupManagementEventListeners(); // Setup listeners for approve/reject
+    } else if (window.location.pathname.includes('/admin/saldo.html')) {
+        updateAdminSaldo();
+        loadTransactionHistory();
+    } else if (window.location.pathname.includes('/admin/seller_bills.html')) {
+        updateAdminSaldo();
+        loadBills();
+        loadSellersForDropdown(); // Load sellers for the add bill dropdown
+        document.getElementById('saveNewBillBtn').addEventListener('click', saveNewBill);
+        document.getElementById('bills-list').addEventListener('click', handleBillActions);
+    }
+
+    setupGeneralEventListeners(); // New function for general listeners like popups and logout
+
+    // Fetch and display admin stats on page load
+    // fetchAdminStatsManageUsers(); // Removed as per user request
+
+    // --- Reverted sidebar active link logic ---
+    const currentPath = window.location.pathname.split('/').pop();
+    const sidebarLinks = document.querySelectorAll('.sidebar nav > a');
+    sidebarLinks.forEach(link => {
+        const linkPath = link.getAttribute('href');
+        if (linkPath === currentPath) {
+            link.classList.add('active');
+        }
+    });
+    // --- End reverted sidebar active link logic ---
 });
 
-// --- AUTH CHECK ---
 function checkAdminAuth() {
     const userRole = localStorage.getItem('loggedInUserRole');
-    // Jika tidak ada role di localStorage atau role bukan 'admin', arahkan ke halaman login
     if (!userRole || userRole !== 'admin') {
-        console.warn('Invalid access: Admin role not found or incorrect. Redirecting to login.');
-        // localStorage.clear(); // Bersihkan sesi yang tidak valid - hati-hati dengan ini jika ada data lain
-        window.location.href = "../index.html"; // Sesuaikan path jika index.html ada di lokasi lain
+        window.location.href = "../index.html";
     }
-    // TODO: Opsional, tambahkan logika validasi sesi lebih lanjut jika diperlukan (misal cek token)
 }
 
-// --- EVENT LISTENERS SETUP ---
-function setupEventListeners() {
-    // Event delegation untuk tombol Edit dan Hapus di SEMUA tabel pengguna
-    // Kita pasang listener pada container tabel itu sendiri atau container yang lebih tinggi
+function setupGeneralEventListeners() {
+    const confirmLogoutBtn = document.getElementById('confirmLogoutBtn');
+    if (confirmLogoutBtn) {
+        confirmLogoutBtn.addEventListener('click', confirmLogout);
+    }
+
+    // Add event listeners for general popups (close buttons and overlay clicks)
+    document.querySelectorAll('.popup-overlay').forEach(overlay => {
+        overlay.addEventListener('click', (e) => {
+            if (e.target === overlay) {
+                closePopup(overlay.id);
+            }
+        });
+    });
+
+    document.querySelectorAll('.close-popup').forEach(closeBtn => {
+        closeBtn.addEventListener('click', (e) => {
+            const popup = e.target.closest('.popup-overlay');
+            if (popup) {
+                   closePopup(popup.id);
+            } else {
+                   console.error("Could not find parent popup for close button.");
+            }
+        });
+    });
+
+    // Attach click listener to all elements with the class 'logout-link' to show the logout popup
+    document.querySelectorAll('.logout-link').forEach(link => {
+        link.addEventListener('click', showLogoutPopup);
+    });
+}
+
+function setupUserManagementEventListeners() {
     const adminTable = document.getElementById('adminTable');
     const buyerTable = document.getElementById('buyerTable');
     const sellerTable = document.getElementById('sellerTable');
@@ -38,13 +91,6 @@ function setupEventListeners() {
         sellerTable.addEventListener('click', handleUserActions);
     }
 
-
-    // Event listeners untuk tombol di popups
-    const confirmLogoutBtn = document.getElementById('confirmLogoutBtn');
-    if (confirmLogoutBtn) {
-        confirmLogoutBtn.addEventListener('click', logout); // Panggil fungsi logout saat dikonfirmasi
-    }
-
     const saveUserBtn = document.getElementById('saveUserBtn');
     if (saveUserBtn) {
         saveUserBtn.addEventListener('click', handleSaveUser);
@@ -55,48 +101,13 @@ function setupEventListeners() {
         confirmDeleteUserBtn.addEventListener('click', handleConfirmDeleteUser);
     }
 
-    // Event listener untuk tombol 'Tambah Pengguna Baru'
-    const adduserButton = document.querySelector('.add-user-section .primary-btn'); // Selector disesuaikan dengan struktur HTML baru
-    if (adduserButton) {
-         adduserButton.addEventListener('click', showAddUserPopup);
+    const saveNewUserBtn = document.getElementById('saveNewUserBtn');
+    if (saveNewUserBtn) {
+        saveNewUserBtn.addEventListener('click', handleAddNewUser);
     }
-
-    // Menutup popup saat mengklik overlay
-    document.querySelectorAll('.popup-overlay').forEach(overlay => {
-        // Pastikan event hanya ter-trigger saat mengklik overlay itu sendiri
-        overlay.addEventListener('click', (e) => {
-            if (e.target === overlay) {
-                overlay.style.display = 'none';
-            }
-        });
-    });
-
-    // Menutup popup saat mengklik tombol close (X)
-    document.querySelectorAll('.close-popup').forEach(closeBtn => {
-        closeBtn.addEventListener('click', (e) => {
-            const popup = e.target.closest('.popup-overlay');
-            if (popup) {
-                 closePopup(popup.id);
-            } else {
-                 console.error("Could not find parent popup for close button.");
-            }
-        });
-    });
 }
 
-
-// --- FETCH USERS ---
 async function fetchUsers() {
-    // Dapatkan body tabel
-    const adminTableBody = document.querySelector('#adminTable tbody');
-    const buyerTableBody = document.querySelector('#buyerTable tbody');
-    const sellerTableBody = document.querySelector('#sellerTable tbody');
-
-    // Tampilkan pesan memuat di semua tabel
-    if (adminTableBody) adminTableBody.innerHTML = '<tr><td colspan="4">Memuat data admin...</td></tr>';
-    if (buyerTableBody) buyerTableBody.innerHTML = '<tr><td colspan="5">Memuat data pembeli...</td></tr>';
-    if (sellerTableBody) sellerTableBody.innerHTML = '<tr><td colspan="5">Memuat data penjual...</td></tr>';
-
     try {
         const response = await fetch('../backend/admin_manage_users.php', {
             method: 'POST',
@@ -105,32 +116,37 @@ async function fetchUsers() {
         });
         const data = await response.json();
 
-        if (data.status === 'success' && data.users) {
-            // Pisahkan pengguna berdasarkan role
-            const admins = data.users.filter(user => user.role && user.role.toLowerCase() === 'admin');
-            const buyers = data.users.filter(user => user.role && user.role.toLowerCase() === 'pembeli');
-            const sellers = data.users.filter(user => user.role && user.role.toLowerCase() === 'seller');
+        const adminTableBody = document.querySelector('#adminTable tbody');
+        const buyerTableBody = document.querySelector('#buyerTable tbody');
+        const sellerTableBody = document.querySelector('#sellerTable tbody');
 
-            // Tampilkan data admin
+        if (data.status === 'success' && Array.isArray(data.users)) {
+            // Normalize role values for comparison
+            const admins = data.users.filter(user => user.role && user.role.toLowerCase().trim() === 'admin');
+            const buyers = data.users.filter(user => user.role && user.role.toLowerCase().trim() === 'buyer');
+            const sellers = data.users.filter(user => user.role && user.role.toLowerCase().trim() === 'seller');
+
+            console.log('Filtered users:', { admins, buyers, sellers }); // Debug log
+
             if (adminTableBody) {
                 if (admins.length === 0) {
-                    adminTableBody.innerHTML = '<tr><td colspan="4">Tidak ada pengguna admin.</td></tr>';
+                    adminTableBody.innerHTML = '<tr><td colspan="5">Tidak ada pengguna admin.</td></tr>';
                 } else {
                     adminTableBody.innerHTML = admins.map(user => `
                         <tr>
                             <td>${user.username}</td>
-                            <td>${user.password || '********'}</td>
-                            <td>${user.role}</td>
+                            <td>********</td>
+                            <td>${getDisplayRole(user.role)}</td>
+                            <td>${user.saldo !== undefined ? parseFloat(user.saldo).toLocaleString('id-ID', { style: 'currency', currency: 'IDR' }) : 'N/A'}</td>
                             <td>
-                                <button class="btn small-btn warning-btn edit-btn" data-id="${user.id}"><i class="uil uil-edit"></i></button>
-                                <button class="btn small-btn danger-btn delete-btn" data-id="${user.id}" data-username="${user.username}"><i class="uil uil-trash"></i></button>
+                                <button class="btn small-btn warning-btn edit-btn" data-id="${user.id}">Edit</button>
+                                <button class="btn small-btn danger-btn delete-btn" data-id="${user.id}" data-username="${user.username}">Hapus</button>
                             </td>
                         </tr>
                     `).join('');
                 }
             }
 
-            // Tampilkan data pembeli
             if (buyerTableBody) {
                 if (buyers.length === 0) {
                     buyerTableBody.innerHTML = '<tr><td colspan="5">Tidak ada pengguna pembeli.</td></tr>';
@@ -138,19 +154,18 @@ async function fetchUsers() {
                     buyerTableBody.innerHTML = buyers.map(user => `
                         <tr>
                             <td>${user.username}</td>
-                            <td>${user.password || '********'}</td>
-                            <td>${user.role}</td>
-                            <td>Rp ${parseFloat(user.saldo || 0).toLocaleString('id-ID')}</td>
+                            <td>********</td>
+                            <td>${getDisplayRole(user.role)}</td>
+                            <td>${user.saldo !== undefined ? parseFloat(user.saldo).toLocaleString('id-ID', { style: 'currency', currency: 'IDR' }) : 'N/A'}</td>
                             <td>
-                                <button class="btn small-btn warning-btn edit-btn" data-id="${user.id}"><i class="uil uil-edit"></i></button>
-                                <button class="btn small-btn danger-btn delete-btn" data-id="${user.id}" data-username="${user.username}"><i class="uil uil-trash"></i></button>
+                                <button class="btn small-btn warning-btn edit-btn" data-id="${user.id}">Edit</button>
+                                <button class="btn small-btn danger-btn delete-btn" data-id="${user.id}" data-username="${user.username}">Hapus</button>
                             </td>
                         </tr>
                     `).join('');
                 }
             }
 
-            // Tampilkan data penjual
             if (sellerTableBody) {
                 if (sellers.length === 0) {
                     sellerTableBody.innerHTML = '<tr><td colspan="5">Tidak ada pengguna penjual.</td></tr>';
@@ -158,124 +173,396 @@ async function fetchUsers() {
                     sellerTableBody.innerHTML = sellers.map(user => `
                         <tr>
                             <td>${user.username}</td>
-                            <td>${user.password || '********'}</td>
-                            <td>${user.role}</td>
-                            <td>Rp ${parseFloat(user.saldo || 0).toLocaleString('id-ID')}</td>
+                            <td>********</td>
+                            <td>${getDisplayRole(user.role)}</td>
+                            <td>${user.saldo !== undefined ? parseFloat(user.saldo).toLocaleString('id-ID', { style: 'currency', currency: 'IDR' }) : 'N/A'}</td>
                             <td>
-                                <button class="btn small-btn warning-btn edit-btn" data-id="${user.id}"><i class="uil uil-edit"></i></button>
-                                <button class="btn small-btn danger-btn delete-btn" data-id="${user.id}" data-username="${user.username}"><i class="uil uil-trash"></i></button>
+                                <button class="btn small-btn warning-btn edit-btn" data-id="${user.id}">Edit</button>
+                                <button class="btn small-btn danger-btn delete-btn" data-id="${user.id}" data-username="${user.username}">Hapus</button>
                             </td>
                         </tr>
                     `).join('');
                 }
             }
         } else {
-            const errorMessage = `Gagal memuat pengguna: ${data.message || 'Unknown error'}`;
-            if (adminTableBody) adminTableBody.innerHTML = `<tr><td colspan="4">${errorMessage}</td></tr>`;
-            if (buyerTableBody) buyerTableBody.innerHTML = `<tr><td colspan="5">${errorMessage}</td></tr>`;
-            if (sellerTableBody) sellerTableBody.innerHTML = `<tr><td colspan="5">${errorMessage}</td></tr>`;
+            console.error('Error fetching users:', data.message);
+            showError('Gagal memuat daftar pengguna.');
         }
     } catch (error) {
         console.error('Error fetching users:', error);
-        const errorMessage = 'Error memuat data pengguna.';
-        if (adminTableBody) adminTableBody.innerHTML = `<tr><td colspan="4">${errorMessage}</td></tr>`;
-        if (buyerTableBody) buyerTableBody.innerHTML = `<tr><td colspan="5">${errorMessage}</td></tr>`;
-        if (sellerTableBody) sellerTableBody.innerHTML = `<tr><td colspan="5">${errorMessage}</td></tr>`;
+        showError('Terjadi kesalahan saat memuat daftar pengguna.');
     }
 }
 
-// --- HANDLE USER ACTIONS (Edit/Delete) ---
-// Menggunakan event delegation pada elemen tabel
 function handleUserActions(event) {
     const target = event.target;
 
-    // Periksa apakah target adalah tombol 'Edit'
     if (target.classList.contains('edit-btn')) {
         const userId = target.dataset.id;
-        showEditUserPopup(userId); // Panggil fungsi untuk menampilkan popup edit
-        event.stopPropagation(); // Hentikan event bubbling
+        showEditUserPopup(userId);
+        event.stopPropagation();
     }
-    // Periksa apakah target adalah tombol 'Hapus'
     else if (target.classList.contains('delete-btn')) {
         const userId = target.dataset.id;
         const username = target.dataset.username;
-        showDeleteUserPopup(userId, username); // Panggil fungsi untuk menampilkan popup hapus
-        event.stopPropagation(); // Hentikan event bubbling
+        showDeleteUserPopup(userId, username);
+        event.stopPropagation();
     }
-    // Aksi lain bisa ditambahkan di sini
 }
 
-// --- POPUP FUNCTIONS (General) ---
 function closePopup(popupId) {
     const popup = document.getElementById(popupId);
     if (popup) {
-        popup.style.display = 'none';
+        popup.classList.remove('active');
     }
 }
 
-// --- LOGOUT POPUP & FUNCTIONALITY ---
-function showLogoutPopup() {
-     // Opsional: Tampilkan username/role di popup logout jika diperlukan
-     // const username = localStorage.getItem('loggedInUsername') || 'Admin';
-     // const logoutUsernameElement = document.getElementById('adminLogoutUserName'); // Pastikan ID ini ada di HTML
-     // if(logoutUsernameElement) logoutUsernameElement.textContent = username;
-
+function showLogoutPopup(event) {
+    // Prevent the default link behavior
+    if (event) {
+        event.preventDefault();
+    }
     const logoutPopup = document.getElementById('logoutPopup');
     if (logoutPopup) {
-        logoutPopup.style.display = 'flex';
+        const logoutUserName = document.getElementById('logoutUserName');
+        const logoutUserRole = document.getElementById('logoutUserRole');
+        const loggedInUsername = localStorage.getItem('loggedInUsername');
+        const loggedInUserRole = localStorage.getItem('loggedInUserRole');
+
+        if (logoutUserName && loggedInUsername) {
+            logoutUserName.textContent = loggedInUsername;
+        }
+        if (logoutUserRole && loggedInUserRole) {
+            logoutUserRole.textContent = loggedInUserRole;
+        }
+
+        logoutPopup.classList.add('active');
     }
 }
 
-function logout() {
-    console.log('Admin logging out...');
-    // Hapus informasi login dari localStorage
-    localStorage.removeItem('loggedInUserId');
-    localStorage.removeItem('loggedInUsername');
-    localStorage.removeItem('loggedInUserRole');
-     // localStorage.clear(); // Alternatif: Hapus semua, hati-hati jika ada data lain
+async function confirmLogout() {
+    try {
+        // Call the backend logout script (now using login.php for consistency)
+        const response = await fetch('../backend/login.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'logout' })
+        });
 
-    // Arahkan ke halaman login utama (index.html)
-    window.location.href = '../index.html'; // Sesuaikan path jika perlu
+        const result = await response.json();
+
+        if (result.status === 'success') {
+            console.log('Server logout successful.', result.message);
+            // Proceed with client-side logout
+            localStorage.clear();
+            window.location.href = '../index.html';
+        } else {
+            console.error('Server logout failed:', result.message);
+            showError(`Server logout failed: ${result.message}`);
+        }
+    } catch (error) {
+        console.error('Error during logout:', error);
+        showError('Terjadi kesalahan saat logout.');
+    }
 }
 
+function showSuccess(message) {
+    console.log("Showing success popup with message:", message); // DEBUG LOG
+    const successPopup = document.getElementById('successPopup');
+    const successMessageElement = document.getElementById('successMessage');
+    successMessageElement.textContent = message;
+    successPopup.style.display = 'flex';
+    setTimeout(() => {
+        successPopup.style.display = 'none';
+    }, 5000);
+}
 
-// --- EDIT USER POPUP ---
+function showError(message) {
+    console.log("Showing error popup with message:", message); // DEBUG LOG
+    const errorPopup = document.getElementById('errorPopup');
+    const errorMessageElement = document.getElementById('errorMessage');
+    errorMessageElement.textContent = message;
+    errorPopup.style.display = 'flex';
+    setTimeout(() => {
+        errorPopup.style.display = 'none';
+    }, 5000);
+}
+
+// --- Admin Top Up Management Functions ---
+
+async function loadAdminTopups() {
+    const pendingTableBody = document.querySelector('#pending-topup-table tbody');
+    const allHistoryTableBody = document.querySelector('#all-topup-history-table tbody');
+    const noPendingMessage = document.getElementById('no-pending-topups');
+    const noAllMessage = document.getElementById('no-all-topups');
+
+    if (pendingTableBody) pendingTableBody.innerHTML = '<tr><td colspan="6">Memuat permintaan top up...</td></tr>';
+    if (allHistoryTableBody) allHistoryTableBody.innerHTML = '<tr><td colspan="6">Memuat riwayat top up...</td></tr>';
+
+    try {
+        // Fetch pending top-ups
+        const pendingResponse = await fetch('../backend/admin_topup_handler.php?action=get_pending_topups');
+        const pendingData = await pendingResponse.json();
+
+        if (pendingData.status === 'success' && Array.isArray(pendingData.data)) {
+            if (pendingData.data.length === 0) {
+                noPendingMessage.style.display = 'block';
+                pendingTableBody.innerHTML = '';
+            } else {
+                noPendingMessage.style.display = 'none';
+                pendingTableBody.innerHTML = pendingData.data.map(item => {
+                    const formattedAmount = parseInt(item.jumlah).toLocaleString('id-ID');
+                    const date = new Date(item.created_at);
+                    const formattedDate = date.toLocaleDateString('id-ID', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+                    return `
+                        <tr>
+                            <td>${item.id}</td>
+                            <td>${item.pembeli_id}</td>
+                            <td>${item.username}</td>
+                            <td>Rp ${formattedAmount}</td>
+                            <td>${formattedDate}</td>
+                            <td>
+                                <button class="btn small-btn success-btn approve-topup" data-id="${item.id}">Approve</button>
+                                <button class="btn small-btn danger-btn reject-topup" data-id="${item.id}">Reject</button>
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
+            }
+        } else {
+            pendingTableBody.innerHTML = `<tr><td colspan="6">Error memuat permintaan pending: ${pendingData.message || 'Unknown error'}</td></tr>`;
+            noPendingMessage.style.display = 'none';
+        }
+
+        // Fetch all top-up history
+        const allResponse = await fetch('../backend/admin_topup_handler.php?action=get_all_topups');
+        const allData = await allResponse.json();
+
+        if (allData.status === 'success' && Array.isArray(allData.data)) {
+            if (allData.data.length === 0) {
+                noAllMessage.style.display = 'block';
+                allHistoryTableBody.innerHTML = '';
+            } else {
+                noAllMessage.style.display = 'none';
+                allHistoryTableBody.innerHTML = allData.data.map(item => {
+                    const formattedAmount = parseInt(item.jumlah).toLocaleString('id-ID');
+                    const date = new Date(item.created_at);
+                    const formattedDate = date.toLocaleDateString('id-ID', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+                    const statusText = getStatusText(item.status);
+                    const statusClass = `status-${item.status}`;
+                    return `
+                        <tr>
+                            <td>${item.id}</td>
+                            <td>${item.pembeli_id}</td>
+                            <td>${item.username}</td>
+                            <td>Rp ${formattedAmount}</td>
+                            <td>${formattedDate}</td>
+                            <td><span class="status-badge ${statusClass}">${statusText}</span></td>
+                        </tr>
+                    `;
+                }).join('');
+            }
+        } else {
+            allHistoryTableBody.innerHTML = `<tr><td colspan="6">Error memuat riwayat top up: ${allData.message || 'Unknown error'}</td></tr>`;
+            noAllMessage.style.display = 'none';
+        }
+
+    } catch (error) {
+        console.error('Error loading admin top-ups:', error);
+        showError('Gagal memuat data top up admin.');
+        if (pendingTableBody) pendingTableBody.innerHTML = '<tr><td colspan="6">Gagal memuat data.</td></tr>';
+        if (allHistoryTableBody) allHistoryTableBody.innerHTML = '<tr><td colspan="6">Gagal memuat data.</td></tr>';
+        noPendingMessage.style.display = 'block';
+        noAllMessage.style.display = 'block';
+    }
+}
+
+function setupAdminTopupManagementEventListeners() {
+    const pendingTable = document.getElementById('pending-topup-table');
+    if (pendingTable) {
+        pendingTable.addEventListener('click', (event) => {
+            const target = event.target;
+            if (target.classList.contains('approve-topup')) {
+                const topupId = target.dataset.id;
+                handleTopupAction(topupId, 'disetujui');
+            } else if (target.classList.contains('reject-topup')) {
+                const topupId = target.dataset.id;
+                handleTopupAction(topupId, 'ditolak');
+            }
+        });
+    }
+}
+
+async function handleTopupAction(topupId, newStatus) {
+    if (!confirm(`Apakah Anda yakin ingin ${newStatus === 'disetujui' ? 'menyetujui' : 'menolak'} top up ini (ID: ${topupId})?`)) {
+        return;
+    }
+
+    try {
+        const formData = new FormData();
+        formData.append('action', 'update_topup_status');
+        formData.append('topupId', topupId);
+        formData.append('newStatus', newStatus);
+
+        const response = await fetch('../backend/admin_topup_handler.php', {
+            method: 'POST',
+            body: formData,
+        });
+
+        const result = await response.json();
+
+        if (result.status === 'success') {
+            showSuccess(result.message);
+            loadAdminTopups(); // Reload tables after successful action
+        } else {
+            showError(result.message);
+        }
+    } catch (error) {
+        console.error('Error updating topup status:', error);
+        showError('Terjadi kesalahan saat memperbarui status top up.');
+    }
+}
+
+function getStatusText(status) {
+    switch(status) {
+        case 'menunggu': return 'Menunggu Konfirmasi';
+        case 'disetujui': return 'Dikonfirmasi';
+        case 'ditolak': return 'Ditolak';
+        default: return status;
+    }
+}
+
+// Placeholder functions from previous context, might need review for admin context
+function updateAdminSaldo() {
+    // Implement actual logic to fetch admin saldo if needed
+    console.log("Updating admin saldo placeholder.");
+    document.getElementById('saldo').textContent = 'Rp 999.999.999'; // Placeholder
+}
+
+function loadTransactionHistory() {
+    // Implement actual logic to fetch admin transaction history if needed
+    console.log("Loading admin transaction history placeholder.");
+    // Example of populating a table:
+    // const tableBody = document.querySelector('#adminTransactionTable tbody');
+    // if (tableBody) tableBody.innerHTML = '<tr><td colspan="4">Belum ada transaksi.</td></tr>';
+}
+
+function updateProfileInfo() {
+    const loggedInUsername = localStorage.getItem('loggedInUsername');
+    const loggedInUserRole = localStorage.getItem('loggedInUserRole');
+    const profileNameElement = document.querySelector('.profile-name');
+    const profileInfoUserName = document.getElementById('profileInfoUserName');
+    const profileInfoUserRole = document.getElementById('profileInfoUserRole');
+    const profileInfoEmail = document.getElementById('profileInfoEmail');
+    const profileInfoPhone = document.getElementById('profileInfoPhone');
+
+    if (profileNameElement) profileNameElement.textContent = loggedInUsername || 'Admin';
+    if (profileInfoUserName) profileInfoUserName.textContent = loggedInUsername || 'Admin';
+    if (profileInfoUserRole) profileInfoUserRole.textContent = loggedInUserRole || 'Administrator';
+    if (profileInfoEmail) profileInfoEmail.textContent = localStorage.getItem('loggedInUserEmail') || 'Belum Tersedia';
+    if (profileInfoPhone) profileInfoPhone.textContent = localStorage.getItem('loggedInUserPhone') || 'Belum Tersedia';
+}
+
+// --- User Management Functions ---
+
+function showAddUserPopup(role) {
+    const addUserPopup = document.getElementById('addUserPopup');
+    const addUsernameInput = document.getElementById('addUsername');
+    const addSaldoInput = document.getElementById('addSaldo');
+    const addPasswordInput = document.getElementById('addPassword');
+
+    if (addUserPopup) {
+        addUsernameInput.value = '';
+        addPasswordInput.value = '';
+        addSaldoInput.value = '0'; // Set default saldo to 0
+        addUserPopup.dataset.currentRole = role; // Store the role in a data attribute
+        addUserPopup.classList.add('active'); // Use class 'active' to show popup
+    }
+}
+
+// Helper function to convert display role to database role
+function getDisplayRole(role) {
+    const roleMap = {
+        'buyer': 'Pembeli',
+        'seller': 'Penjual',
+        'admin': 'Admin'
+    };
+    return roleMap[role] || role;
+}
+
+// Helper function to convert database role to display role
+function getDatabaseRole(role) {
+    const roleMap = {
+        'Pembeli': 'buyer',
+        'Penjual': 'seller',
+        'Admin': 'admin'
+    };
+    return roleMap[role] || role;
+}
+
+async function handleAddNewUser() {
+    const addUsername = document.getElementById('addUsername').value;
+    const addUserPopup = document.getElementById('addUserPopup');
+    const addRole = addUserPopup.dataset.currentRole; // Get role from data attribute
+    const addPassword = document.getElementById('addPassword').value;
+    const addSaldo = document.getElementById('addSaldo').value;
+
+    console.log("Attempting to add new user with:", {
+        username: addUsername,
+        role: addRole,
+        saldo: addSaldo
+    }); // DEBUG LOG
+
+    if (!addUsername || !addPassword || !addRole) {
+        showError('Username, Password, dan Role tidak boleh kosong.');
+        return;
+    }
+
+    try {
+        const response = await fetch('../backend/admin_manage_users.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                action: 'add_user',
+                username: addUsername,
+                password: addPassword,
+                role: addRole, // Role is already in database format
+                saldo: parseFloat(addSaldo) // Parse saldo as float
+            })
+        });
+
+        const data = await response.json();
+
+        if (data.status === 'success') {
+            showSuccess('Pengguna berhasil ditambahkan.');
+            closePopup('addUserPopup');
+            fetchUsers(); // Refresh the user list
+        } else {
+            showError(`Gagal menambahkan pengguna: ${data.message}`);
+        }
+    } catch (error) {
+        console.error('Error adding new user:', error);
+        showError('Terjadi kesalahan saat menambahkan pengguna.');
+    }
+}
+
 async function showEditUserPopup(userId) {
     const editUserPopup = document.getElementById('editUserPopup');
     const editUserIdSpan = document.getElementById('editUserId');
     const editUsernameInput = document.getElementById('editUsername');
     const editRoleSelect = document.getElementById('editRole');
-    const editSaldoInput = document.getElementById('editSaldo');
     const editPasswordInput = document.getElementById('editPassword');
-    const saveUserBtn = document.getElementById('saveUserBtn');
-    const editSaldoFormGroup = document.getElementById('editSaldoFormGroup'); // Dapatkan form group saldo
-
-    if (!editUserPopup || !editUserIdSpan || !editUsernameInput || !editRoleSelect || !editSaldoInput || !editPasswordInput || !saveUserBtn || !editSaldoFormGroup) {
-        console.error("Edit user popup elements not found!");
-        // Tampilkan pesan error di UI jika memungkinkan
-        return;
-    }
-
-    // Reset form dan tampilkan loading/placeholder
-    editUserIdSpan.textContent = 'Memuat...';
-    editUsernameInput.value = '';
-    editRoleSelect.value = 'pembeli'; // Default value (bisa diubah nanti)
-    editSaldoInput.value = '';
-    editPasswordInput.value = ''; // Kosongkan input password saat membuka
-    saveUserBtn.disabled = true; // Disable tombol simpan saat memuat
-
-    // Sembunyikan form group saldo secara default
-    editSaldoFormGroup.style.display = 'none';
-
-    editUserPopup.style.display = 'flex'; // Tampilkan popup dengan state loading
+    const editSaldoFormGroup = document.getElementById('editSaldoFormGroup');
+    const editSaldoInput = document.getElementById('editSaldo');
 
     try {
-        // TODO: Fetch user details from backend based on userId
-        // Pastikan endpoint PHP Anda merespons dengan { status: 'success', user: { id, username, role, saldo, ... } }
-        const response = await fetch('../backend/admin_manage_users.php', { // Sesuaikan endpoint
+        const response = await fetch('../backend/admin_manage_users.php', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ action: 'get_user_details', user_id: userId })
+            body: JSON.stringify({ 
+                action: 'get_user_details',
+                userId: userId 
+            })
         });
         const data = await response.json();
 
@@ -283,233 +570,376 @@ async function showEditUserPopup(userId) {
             const user = data.user;
             editUserIdSpan.textContent = user.id;
             editUsernameInput.value = user.username;
+            editRoleSelect.value = user.role; // Role is already in database format
+            editPasswordInput.value = ''; // Clear password field
 
-            // Set nilai role dropdown berdasarkan data dari backend
-            if (editRoleSelect.querySelector(`option[value="${user.role}"]`)) {
-                 editRoleSelect.value = user.role;
-                 // Tampilkan form group saldo hanya jika role adalah 'pembeli' atau 'seller'
-                 // Juga pastikan saldo input group ada sebelum mencoba mengakses gayanya.
-                 if (user.role === 'pembeli' || user.role === 'seller') {
-                     editSaldoFormGroup.style.display = 'block'; // Atau 'flex'
-                     editSaldoInput.required = true; // Saldo wajib diisi untuk role ini
-                 } else {
-                     editSaldoFormGroup.style.display = 'none';
-                     editSaldoInput.required = false;
-                 }
+            // Show/hide saldo input based on role
+            if (user.role === 'buyer' || user.role === 'seller') {
+                if (editSaldoFormGroup) editSaldoFormGroup.style.display = 'block';
+                if (editSaldoInput) editSaldoInput.value = user.saldo || 0;
             } else {
-                 // Fallback jika role dari backend tidak ada di opsi dropdown
-                 console.warn(`Role "${user.role}" from backend not found in dropdown options.`);
-                 editRoleSelect.value = 'pembeli'; // Set default
-                 // Tampilkan saldo jika fallback ke pembeli dan saldo input group ada
-                 const editSaldoFormGroup = document.getElementById('editSaldoFormGroup');
-                 if (editSaldoFormGroup) {
-                     editSaldoFormGroup.style.display = 'block'; // Tampilkan saldo jika fallback ke pembeli
-                     editSaldoInput.required = true;
-                 }
+                if (editSaldoFormGroup) editSaldoFormGroup.style.display = 'none';
+                if (editSaldoInput) editSaldoInput.value = 0;
             }
+            editUserPopup.classList.add('active'); // Use class 'active' to show popup
 
-            editSaldoInput.value = parseFloat(user.saldo || 0).toFixed(2); // Format saldo, gunakan 0 jika null/undefined
-            // Password input dibiarkan kosong secara default
-            saveUserBtn.disabled = false; // Aktifkan tombol simpan
-            saveUserBtn.dataset.userId = userId; // Simpan userId di tombol simpan
-
-            // Tambahkan event listener change pada dropdown role di popup edit
-            // Agar form group saldo muncul/sembunyi saat role diubah
-            editRoleSelect.onchange = function() {
-                 // Pastikan saldo input group ada sebelum mencoba mengakses gayanya.
-                 const editSaldoFormGroup = document.getElementById('editSaldoFormGroup');
-                 if (editSaldoFormGroup) {
-                     if (this.value === 'pembeli' || this.value === 'seller') {
-                         editSaldoFormGroup.style.display = 'block'; // Atau 'flex'
-                         editSaldoInput.required = true;
-                     } else {
-                         editSaldoFormGroup.style.display = 'none';
-                         editSaldoInput.required = false;
-                     }
-                 }
-            };
-
+            // Set data-id on save button for easy access
+            const saveUserBtn = document.getElementById('saveUserBtn');
+            if (saveUserBtn) {
+                saveUserBtn.dataset.id = userId;
+            }
         } else {
-            editUserIdSpan.textContent = userId; // Tampilkan ID meskipun gagal
-            alert(`Gagal memuat detail pengguna: ${data.message || 'Unknown error'}`);
-            closePopup('editUserPopup'); // Tutup popup jika gagal memuat
+            showError(`Gagal memuat detail pengguna: ${data.message || 'Pengguna tidak ditemukan.'}`);
         }
     } catch (error) {
         console.error('Error fetching user details:', error);
-        editUserIdSpan.textContent = userId; // Tampilkan ID meskipun error
-        alert('Error memuat detail pengguna.');
-        closePopup('editUserPopup'); // Tutup popup jika error
+        showError('Terjadi kesalahan saat memuat detail pengguna.');
     }
 }
 
-async function handleSaveUser(event) {
-    const userId = event.target.dataset.userId;
-    const username = document.getElementById('editUsername').value.trim();
+async function handleSaveUser() {
+    const userId = document.getElementById('saveUserBtn').dataset.id;
+    const username = document.getElementById('editUsername').value;
     const role = document.getElementById('editRole').value;
-    const password = document.getElementById('editPassword').value; // Ambil nilai input password (bisa kosong)
-    const editSaldoInput = document.getElementById('editSaldo'); // Ambil elemen input saldo
-    const saldoInput = editSaldoInput.value; // Ambil nilai saldo sebagai string
+    const password = document.getElementById('editPassword').value;
+    const saldo = document.getElementById('editSaldo').value;
 
-    // Validasi input umum
-    if (!userId || !username || !role) {
-        alert('Data pengguna tidak lengkap.');
+    if (!username || !role) {
+        showError('Username dan Role tidak boleh kosong.');
         return;
     }
 
-     let saldo = null; // Saldo akan null secara default
-
-    // Validasi dan ambil saldo hanya jika form group saldo terlihat (untuk pembeli/seller)
-    // Juga pastikan saldo input group ada sebelum mencoba mengakses gayanya.
-    const editSaldoFormGroup = document.getElementById('editSaldoFormGroup');
-    if (editSaldoFormGroup && editSaldoFormGroup.style.display !== 'none') {
-         if (saldoInput === '') {
-             alert('Saldo harus diisi untuk role ini.');
-             return;
-         }
-         saldo = parseFloat(saldoInput);
-         if (isNaN(saldo) || saldo < 0) {
-             alert('Saldo tidak valid atau negatif.');
-             return;
-         }
-    }
-
-
-    // Opsional: Validasi format username jika diperlukan
-    // Opsional: Validasi panjang password jika diisi
-
-    // Tampilkan loading state pada tombol simpan
-    const saveUserBtn = event.target; // Tombol yang diklik
-    const originalButtonText = saveUserBtn.textContent;
-    saveUserBtn.disabled = true;
-    saveUserBtn.textContent = 'Menyimpan...';
-
     try {
-        // TODO: Send updated user data to backend
-        // Pastikan endpoint PHP Anda menangani aksi 'update_user' dan mengembalikan { status: 'success', message: '...' }
-        const response = await fetch('../backend/admin_manage_users.php', { // Sesuaikan endpoint
+        const payload = {
+            action: 'update_user',
+            userId: userId,
+            username: username,
+            role: role // Role is already in database format
+        };
+
+        if (password) {
+            payload.password = password;
+        }
+
+        // Add saldo to payload if the role is buyer or seller
+        if (role === 'buyer' || role === 'seller') {
+            payload.saldo = parseFloat(saldo);
+        }
+
+        console.log('Sending update payload:', payload); // Debug log
+
+        const response = await fetch('../backend/admin_manage_users.php', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                action: 'update_user',
-                user_id: userId,
-                username: username,
-                role: role,
-                // Kirim saldo hanya jika nilainya bukan null (yaitu jika form group saldo terlihat dan valid)
-                // Juga pastikan saldo input group ada sebelum mencoba mengakses gayanya.
-                saldo: (editSaldoFormGroup && editSaldoFormGroup.style.display !== 'none') ? saldo : undefined,
-                // Kirim password hanya jika diisi (tidak kosong)
-                password: password !== '' ? password : undefined
-            })
+            body: JSON.stringify(payload)
         });
+
         const data = await response.json();
+        console.log('Update response:', data); // Debug log
 
         if (data.status === 'success') {
-            alert('Data pengguna berhasil diperbarui!');
-            closePopup('editUserPopup'); // Tutup popup setelah berhasil
-            fetchUsers(); // Muat ulang daftar pengguna untuk melihat perubahan
+            showSuccess('Pengguna berhasil diperbarui.');
+            closePopup('editUserPopup');
+            fetchUsers(); // Refresh the user list
         } else {
-            alert(`Gagal memperbarui data pengguna: ${data.message || 'Unknown error'}`);
+            showError(`Gagal memperbarui pengguna: ${data.message}`);
         }
     } catch (error) {
-        console.error('Error updating user:', error);
-        alert('Error saat memperbarui data pengguna.');
-    } finally {
-        // Kembalikan state tombol simpan
-        saveUserBtn.disabled = false;
-        saveUserBtn.textContent = originalButtonText;
-        // Hapus event listener change dari select role agar tidak menumpuk
-        const editRoleSelect = document.getElementById('editRole');
-        if (editRoleSelect) editRoleSelect.onchange = null;
+        console.error('Error saving user:', error);
+        showError('Terjadi kesalahan saat memperbarui pengguna.');
     }
 }
 
-// --- DELETE USER POPUP & FUNCTIONALITY ---
 function showDeleteUserPopup(userId, username) {
-    const deleteUserPopup = document.getElementById('deleteUserPopup');
-    const deleteUserIdSpan = document.getElementById('deleteUserId');
-    const deleteUsernameStrong = document.getElementById('deleteUsername');
-    const confirmDeleteUserBtn = document.getElementById('confirmDeleteUserBtn');
-
-    if (!deleteUserPopup || !deleteUserIdSpan || !deleteUsernameStrong || !confirmDeleteUserBtn) {
-        console.error("Delete user popup elements not found!");
-        return;
-    }
-
-    deleteUserIdSpan.textContent = userId;
-    deleteUsernameStrong.textContent = username; // Tampilkan username di popup konfirmasi
-    confirmDeleteUserBtn.dataset.userId = userId; // Simpan userId di tombol konfirmasi hapus
-
-    deleteUserPopup.style.display = 'flex'; // Tampilkan popup
+    document.getElementById('deleteUserId').textContent = userId;
+    document.getElementById('deleteUsername').textContent = username;
+    document.getElementById('deleteUserPopup').classList.add('active'); // Use class 'active' to show popup
 }
 
-async function handleConfirmDeleteUser(event) {
-    const userIdToDelete = event.target.dataset.userId;
-
-    if (!userIdToDelete) {
-        alert('User ID tidak ditemukan untuk dihapus.');
-        return;
-    }
-
-    // Tampilkan loading state pada tombol hapus
-    const confirmDeleteUserBtn = event.target; // Tombol yang diklik
-    const originalButtonText = confirmDeleteUserBtn.textContent;
-    confirmDeleteUserBtn.disabled = true;
-    confirmDeleteUserBtn.textContent = 'Menghapus...';
+async function handleConfirmDeleteUser() {
+    const userId = document.getElementById('deleteUserId').textContent;
 
     try {
-        // TODO: Send delete user request to backend
-        // Pastikan endpoint PHP Anda menangani aksi 'delete_user' dan mengembalikan { status: 'success', message: '...' }
-        const response = await fetch('../backend/admin_manage_users.php', { // Sesuaikan endpoint
+        const response = await fetch('../backend/admin_manage_users.php', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                action: 'delete_user',
-                user_id: userIdToDelete
-            })
+            body: JSON.stringify({ action: 'delete_user', userId: userId })
         });
-        const data = await response.json();
+        const result = await response.json();
 
-        if (data.status === 'success') {
-            alert('Pengguna berhasil dihapus!');
-            closePopup('deleteUserPopup'); // Tutup popup setelah berhasil
-            fetchUsers(); // Muat ulang daftar pengguna untuk melihat perubahan
+        if (result.status === 'success') {
+            showSuccess(result.message);
+            closePopup('deleteUserPopup');
+            fetchUsers(); // Reload users after deleting
         } else {
-            alert(`Gagal menghapus pengguna: ${data.message || 'Unknown error'}`);
+            showError(result.message);
         }
     } catch (error) {
         console.error('Error deleting user:', error);
-        alert('Error saat menghapus pengguna.');
-    } finally {
-        // Kembalikan state tombol hapus
-        confirmDeleteUserBtn.disabled = false;
-        confirmDeleteUserBtn.textContent = originalButtonText;
+        showError('Terjadi kesalahan saat menghapus pengguna.');
     }
 }
 
-// --- ADD USER POPUP & FUNCTIONALITY ---
-function showAddUserPopup(role) {
-    const popup = document.getElementById('addUserPopup');
-    const roleSelect = document.getElementById('userRole');
-    const saldoGroup = document.getElementById('saldoFormGroup');
-    
-    // Set role yang dipilih
-    roleSelect.value = role;
-    
-    // Tampilkan/sembunyikan field saldo berdasarkan role
-    if (role === 'admin') {
-        saldoGroup.style.display = 'none';
-    } else {
-        saldoGroup.style.display = 'block';
+// Admin stats for manage_users page (formerly used, now adapted for safety)
+async function fetchAdminStatsManageUsers() {
+    // Check if the target elements for admin stats exist on the current page
+    const mainAdminBalanceElement = document.getElementById('mainAdminBalance');
+    const totalTransactionsElement = document.getElementById('totalTransactions');
+
+    // If elements are not found, it means we are likely not on admin/saldo.html,
+    // so we can safely exit to prevent TypeErrors.
+    if (!mainAdminBalanceElement || !totalTransactionsElement) {
+        console.log("Admin stats elements not found on this page. Skipping fetchAdminStatsManageUsers.");
+        return;
     }
-    
-    // Reset form
-    document.getElementById('addUserForm').reset();
-    
-    // Tampilkan popup
-    popup.style.display = 'flex';
+
+    try {
+        const response = await fetch('../backend/admin_saldo.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'get_admin_stats' })
+        });
+        const data = await response.json();
+
+        if (data.status === 'success') {
+            // Update the main admin balance display
+            if (mainAdminBalanceElement) {
+                mainAdminBalanceElement.textContent = parseFloat(data.totalIncome).toLocaleString('id-ID', { style: 'currency', currency: 'IDR' });
+            }
+            // Update the total transactions display
+            if (totalTransactionsElement) {
+                totalTransactionsElement.textContent = data.totalTransactions;
+            }
+        } else {
+            console.error('Failed to fetch admin stats:', data.message);
+            // Optionally display an error message on the UI
+        }
+    } catch (error) {
+        console.error('Error fetching admin stats:', error);
+    }
 }
 
-function closeAddUserPopup() {
-    const popup = document.getElementById('addUserPopup');
-    popup.style.display = 'none';
-} 
+async function loadSellersForDropdown() {
+    try {
+        const response = await fetch('../backend/admin_manage_users.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'get_all_users' }) // Fetch all users
+        });
+        const data = await response.json();
+
+        const billSellerDropdown = document.getElementById('billSeller');
+        if (billSellerDropdown) {
+            billSellerDropdown.innerHTML = '<option value="">Pilih Penjual</option>'; // Default option
+            if (data.status === 'success' && Array.isArray(data.users)) {
+                const sellers = data.users.filter(user => user.role && user.role.toLowerCase().trim() === 'seller');
+                if (sellers.length > 0) {
+                    sellers.forEach(seller => {
+                        const option = document.createElement('option');
+                        option.value = seller.id;
+                        option.textContent = seller.username;
+                        billSellerDropdown.appendChild(option);
+                    });
+                } else {
+                    billSellerDropdown.innerHTML = '<option value="">Tidak ada penjual tersedia</option>';
+                }
+            } else {
+                console.error('Error fetching sellers:', data.message);
+                showError('Gagal memuat daftar penjual.');
+            }
+        }
+    } catch (error) {
+        console.error('Error fetching sellers for dropdown:', error);
+        showError('Terjadi kesalahan saat memuat daftar penjual.');
+    }
+}
+
+async function saveNewBill() {
+    const sellerId = document.getElementById('billSeller').value;
+    const billAmount = document.getElementById('billAmount').value;
+    const billMonth = document.getElementById('billMonth').value;
+    const billYear = document.getElementById('billYear').value;
+
+    if (!sellerId || !billAmount || !billMonth || !billYear) {
+        showError('Semua bidang harus diisi.');
+        return;
+    }
+
+    if (parseFloat(billAmount) <= 0) {
+        showError('Jumlah tagihan harus lebih besar dari nol.');
+        return;
+    }
+
+    try {
+        const response = await fetch('../backend/admin_manage_bills.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                action: 'add_bill',
+                seller_id: sellerId,
+                total: parseFloat(billAmount),
+                periode_bulan: parseInt(billMonth),
+                periode_tahun: parseInt(billYear)
+            })
+        });
+        const data = await response.json();
+
+        if (data.status === 'success') {
+            showSuccess(data.message);
+            closePopup('addBillPopup');
+            loadBills(); // Reload bills after adding
+        } else {
+            showError(data.message);
+        }
+    } catch (error) {
+        console.error('Error adding new bill:', error);
+        showError('Terjadi kesalahan saat menambahkan tagihan baru.');
+    }
+}
+
+async function loadBills() {
+    const filterStatus = document.getElementById('filter-status').value;
+    const filterMonth = document.getElementById('filter-month').value;
+    const billListContainer = document.getElementById('bills-list');
+
+    // Ensure bills-list exists before proceeding
+    if (!billListContainer) {
+        console.error("Element with ID 'bills-list' not found.");
+        return;
+    }
+
+    try {
+        const response = await fetch('../backend/admin_manage_bills.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'get_all_bills' }) // Currently fetches all bills, filtering will be client-side for now
+        });
+        const data = await response.json();
+
+        if (data.status === 'success' && Array.isArray(data.bills)) {
+            let filteredBills = data.bills;
+
+            // Apply status filter
+            if (filterStatus !== 'all') {
+                filteredBills = filteredBills.filter(bill => bill.status === filterStatus);
+            }
+
+            // Apply month filter
+            if (filterMonth !== 'all') {
+                filteredBills = filteredBills.filter(bill => {
+                    const billDate = new Date(bill.tanggal);
+                    return billDate.getMonth() + 1 === parseInt(filterMonth);
+                });
+            }
+
+            if (filteredBills.length === 0) {
+                billListContainer.innerHTML = '<p class="no-records">Tidak ada tagihan ditemukan.</p>';
+            } else {
+                let tableHtml = `
+                    <div class="table-responsive">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Penjual</th>
+                                    <th>Periode</th>
+                                    <th>Jumlah</th>
+                                    <th>Status</th>
+                                    <th>Tanggal Dibuat</th>
+                                    <th>Tanggal Dibayar</th>
+                                    <th>Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                `;
+                filteredBills.forEach(bill => {
+                    const formattedAmount = parseFloat(bill.total).toLocaleString('id-ID', { style: 'currency', currency: 'IDR' });
+                    const formattedDateCreated = new Date(bill.tanggal).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
+                    const formattedDatePaid = bill.tanggal_dibayar ? new Date(bill.tanggal_dibayar).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }) : '-';
+                    const statusClass = bill.status === 'paid' ? 'status-paid' : 'status-pending';
+                    const statusText = bill.status === 'paid' ? 'Sudah Dibayar' : 'Belum Dibayar';
+                    const payButton = bill.status === 'pending' ?
+                        `<button class="btn small-btn primary-btn pay-bill-btn" data-id="${bill.id}">Bayar</button>` : '';
+
+                    tableHtml += `
+                        <tr>
+                            <td>${bill.id}</td>
+                            <td>${bill.seller_username}</td>
+                            <td>${getMonthName(bill.periode_bulan)} ${bill.periode_tahun}</td>
+                            <td>${formattedAmount}</td>
+                            <td><span class="status-badge ${statusClass}">${statusText}</span></td>
+                            <td>${formattedDateCreated}</td>
+                            <td>${formattedDatePaid}</td>
+                            <td>${payButton}</td>
+                        </tr>
+                    `;
+                });
+                tableHtml += `
+                            </tbody>
+                        </table>
+                    </div>
+                `;
+                billListContainer.innerHTML = tableHtml;
+            }
+        } else {
+            console.error('Error fetching bills:', data.message);
+            billListContainer.innerHTML = '<p class="no-records">Gagal memuat daftar tagihan.</p>';
+        }
+    } catch (error) {
+        console.error('Error loading bills:', error);
+        billListContainer.innerHTML = '<p class="no-records">Terjadi kesalahan saat memuat daftar tagihan.</p>';
+    }
+}
+
+function handleBillActions(event) {
+    const target = event.target;
+    if (target.classList.contains('pay-bill-btn')) {
+        const billId = target.dataset.id;
+        showConfirmPayBillPopup(billId);
+    }
+}
+
+function showConfirmPayBillPopup(billId) {
+    const confirmPayBillBtn = document.getElementById('confirmPayBillBtn');
+    if (confirmPayBillBtn) {
+        confirmPayBillBtn.dataset.billId = billId;
+        document.getElementById('payBillPopup').classList.add('active');
+    }
+}
+
+async function confirmPayBill() {
+    const billId = document.getElementById('confirmPayBillBtn').dataset.billId;
+    try {
+        const response = await fetch('../backend/admin_manage_bills.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                action: 'update_bill_status',
+                bill_id: billId,
+                new_status: 'paid'
+            })
+        });
+        const data = await response.json();
+
+        if (data.status === 'success') {
+            showSuccess(data.message);
+            closePopup('payBillPopup');
+            loadBills(); // Reload bills after updating
+        } else {
+            showError(data.message);
+        }
+    } catch (error) {
+        console.error('Error paying bill:', error);
+        showError('Terjadi kesalahan saat memperbarui status tagihan.');
+    }
+}
+
+function getMonthName(monthNumber) {
+    const date = new Date();
+    date.setMonth(monthNumber - 1); // Month is 0-indexed
+    return date.toLocaleString('id-ID', { month: 'long' });
+}
+
+window.showAddBillPopup = function() {
+    document.getElementById('addBillPopup').classList.add('active');
+}

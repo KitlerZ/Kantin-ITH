@@ -2,10 +2,28 @@ let cart = [];
 let username = sessionStorage.getItem("username");
 
 async function fetchSaldo() {
-    const res = await fetch("../backend/get_saldo.php?username=" + username);
+    const userId = localStorage.getItem('loggedInUserId');
+    if (!userId) {
+        document.getElementById("saldo").textContent = "Rp 0";
+        return 0;
+    }
+
+    const res = await fetch("../backend/login.php", {
+        method: "POST",
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+            action: "get_saldo",
+            userId: userId
+        })
+    });
     const data = await res.json();
-    document.getElementById("saldo").textContent = data.saldo;
-    return parseFloat(data.saldo);
+    if (data.status === "success") {
+        document.getElementById("saldo").textContent = "Rp " + data.saldo.toLocaleString('id-ID');
+        return parseFloat(data.saldo);
+    } else {
+        document.getElementById("saldo").textContent = "Rp 0";
+        return 0;
+    }
 }
 
 async function fetchMenu() {

@@ -1,100 +1,166 @@
 document.addEventListener('DOMContentLoaded', () => {
-    // Functions used across multiple seller pages
-    updateProfileInfo(); // Call this when page loads to show username/role
+    updateProfileInfo();
 });
 
 function updateProfileInfo() {
-    // Assuming user info is stored in localStorage after login
     const username = localStorage.getItem('loggedInUsername');
     const role = localStorage.getItem('loggedInUserRole');
 
+    console.log('updateProfileInfo: Retrieved username from localStorage:', username);
+    console.log('updateProfileInfo: Retrieved role from localStorage:', role);
+
+    if (username) {
+        // Update all elements with class 'profile-name'
+        const profileNameElements = document.querySelectorAll('.profile-name');
+        console.log('updateProfileInfo: Found profile-name elements:', profileNameElements.length);
+        profileNameElements.forEach(el => {
+            el.textContent = username;
+            console.log('updateProfileInfo: Updated profile-name element to:', el.textContent);
+        });
+    }
+
     if (username && role) {
-        const profileUsernameSpan = document.getElementById('profileUsername');
-        const profileRoleSpan = document.getElementById('profileRole');
-        const topbarProfileLink = document.getElementById('topbarProfileLink');
+        const profileUsernameSpan = document.getElementById('profileInfoUserName');
+        const profileRoleSpan = document.getElementById('profileInfoUserRole');
+        const sellerLogoutUserName = document.getElementById('sellerLogoutUserName');
+        const sellerLogoutUserRole = document.getElementById('sellerLogoutUserRole');
 
-        if (profileUsernameSpan) profileUsernameSpan.textContent = username;
-        if (profileRoleSpan) profileRoleSpan.textContent = role;
-
-        // Update topbar link text
-        if (topbarProfileLink) {
-             // Example: 'Kak Ros (Penjual)'
-            topbarProfileLink.innerHTML = `<i class="uil uil-user"></i> ${username} (${role})`;
+        if (profileUsernameSpan) {
+            profileUsernameSpan.textContent = username;
+            console.log('updateProfileInfo: Updated profileInfoUserName to:', profileUsernameSpan.textContent);
         }
-
-
+        if (profileRoleSpan) {
+            profileRoleSpan.textContent = role;
+            console.log('updateProfileInfo: Updated profileInfoUserRole to:', profileRoleSpan.textContent);
+        }
+        if (sellerLogoutUserName) {
+            sellerLogoutUserName.textContent = username;
+            console.log('updateProfileInfo: Updated sellerLogoutUserName to:', sellerLogoutUserName.textContent);
+        }
+        if (sellerLogoutUserRole) {
+            sellerLogoutUserRole.textContent = role;
+            console.log('updateProfileInfo: Updated sellerLogoutUserRole to:', sellerLogoutUserRole.textContent);
+        }
     } else {
-        // Redirect to login if no user info is found
         console.error('User info not found in localStorage. Redirecting to login.');
-        logout(); // Use the logout function to clear anything and redirect
+        logout();
+    }
+
+    const profileDropdownUsername = document.getElementById('profileDropdownUsername');
+    if (profileDropdownUsername) {
+        profileDropdownUsername.textContent = username;
+        console.log('updateProfileInfo: Updated profileDropdownUsername to:', profileDropdownUsername.textContent);
     }
 }
 
-function showProfileInfo() {
-    const profilePopup = document.getElementById('profilePopup');
-    if (profilePopup) {
-        profilePopup.style.display = 'flex';
-        updateProfileInfo(); // Ensure profile info is up-to-date when showing popup
+function showProfileInfoPopup() {
+    console.log('showProfileInfoPopup: Function called.');
+    const profileDropdown = document.getElementById("profileDropdown");
+    console.log('showProfileInfoPopup: profileDropdown element:', profileDropdown);
+
+    if (profileDropdown) {
+        console.log('showProfileInfoPopup: profileDropdown has active class before remove:', profileDropdown.classList.contains('active'));
+        profileDropdown.classList.remove("active"); // Close the profile dropdown
+        console.log('showProfileInfoPopup: profileDropdown has active class after remove:', profileDropdown.classList.contains('active'));
+    } else {
+        console.log('showProfileInfoPopup: profileDropdown element not found.');
+    }
+
+    const profileInfoPopup = document.getElementById('profileInfoPopup');
+    if (profileInfoPopup) {
+        profileInfoPopup.style.display = 'flex';
+        updateProfileInfo(); // Ensure profile info is updated when showing the popup
+        console.log('showProfileInfoPopup: Profile info popup displayed.');
     }
 }
 
 function showLogout() {
-    console.log('Showing seller logout popup'); // Log
     const logoutPopup = document.getElementById('logoutPopup');
-    // Menghapus referensi ke elemen username/role di popup logout karena tidak ada di HTML
-    // const userNameElement = document.getElementById('sellerLogoutUserName');
-    // const userRoleElement = document.getElementById('sellerLogoutUserRole');
-
-    // Ambil username dan role dari localStorage tanpa fallback (tidak digunakan lagi di sini)
-    // const loggedInUsername = localStorage.getItem('loggedInUsername') || '';
-    // const loggedInUserRole = localStorage.getItem('loggedInUserRole') || '';
-
-    // Isi elemen di popup (Tidak diperlukan lagi di sini)
-    // if (userNameElement) userNameElement.textContent = loggedInUsername;
-    // Isi role hanya jika elemen ada dan role tersedia (Tidak diperlukan lagi di sini)
-    // if (userRoleElement && loggedInUserRole) userRoleElement.textContent = loggedInUserRole;
-
+    const username = localStorage.getItem('loggedInUsername') || 'Pengguna';
+    const role = localStorage.getItem('loggedInUserRole') || '';
+    const userNameElement = document.getElementById('sellerLogoutUserName');
+    const userRoleElement = document.getElementById('sellerLogoutUserRole');
+    if (userNameElement) userNameElement.textContent = username;
+    if (userRoleElement) userRoleElement.textContent = role;
     if (logoutPopup) {
-        logoutPopup.style.display = 'flex'; // Tampilkan popup overlay
+        logoutPopup.classList.add('active');
     }
 }
 
 function closePopup(popupId) {
     const popup = document.getElementById(popupId);
     if (popup) {
-        popup.style.display = 'none';
+        popup.classList.remove('active');
     }
 }
 
 function logout() {
-    console.log('Logging out seller...'); // Log
-    // Hapus informasi login dari localStorage
-    localStorage.removeItem('loggedInUserId');
-    localStorage.removeItem('loggedInUsername');
-    localStorage.removeItem('loggedInUserRole'); // Hapus role jika disimpan
-
-    // Arahkan ke halaman logout penjual atau halaman login utama
-    // Mengarahkan ke halaman logoutpenjual.html yang terpisah
-    // window.location.href = 'logoutpenjual.html'; // Sesuaikan path jika perlu
-    // Atau arahkan langsung ke halaman login utama jika tidak pakai halaman logout terpisah
-    window.location.href = '../index.html'; // Redirect to the main login page
+    // Make an API call to the backend to destroy the session
+    fetch('../backend/login.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'logout' })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success') {
+            localStorage.clear(); // Clear local storage after successful server-side logout
+            window.location.href = '../index.html'; // Redirect to login page
+        } else {
+            console.error('Server-side logout failed:', data.message);
+            alert('Gagal logout: ' + (data.message || 'Terjadi kesalahan.'));
+        }
+    })
+    .catch(error => {
+        console.error('Error during logout API call:', error);
+        alert('Terjadi error koneksi saat logout.');
+        // Even if API call fails, clear local storage and redirect for safety
+        localStorage.clear();
+        window.location.href = '../index.html';
+    });
 }
 
 function toggleProfile(event) {
-    event.stopPropagation(); // Prevent the click from bubbling up to the document listener
+    event.stopPropagation();
     const profileDropdown = document.getElementById('profileDropdown');
     if (profileDropdown) {
+        const isActive = profileDropdown.classList.contains('active');
+        // Close all other dropdowns first
+        document.querySelectorAll('.profile-dropdown.active').forEach(dropdown => {
+            if (dropdown !== profileDropdown) {
+                dropdown.classList.remove('active');
+            }
+        });
+        // Toggle current dropdown
         profileDropdown.classList.toggle('active');
+        console.log('Profile dropdown toggled:', !isActive);
     }
 }
 
-// Close the profile dropdown if clicked outside
+// Close dropdown when clicking outside
 document.addEventListener('click', (event) => {
     const profileDropdown = document.getElementById('profileDropdown');
-    const profileElement = document.querySelector('.main-content-topbar .profile');
+    const profileElements = document.querySelectorAll('.profile');
     
-    // Check if the click is outside the dropdown and the profile element
-    if (profileDropdown && profileElement && !profileDropdown.contains(event.target) && !profileElement.contains(event.target)) {
-        profileDropdown.classList.remove('active');
+    if (profileDropdown && profileDropdown.classList.contains('active')) {
+        const isClickInsideDropdown = profileDropdown.contains(event.target);
+        const isClickOnProfile = Array.from(profileElements).some(el => el.contains(event.target));
+        
+        if (!isClickInsideDropdown && !isClickOnProfile) {
+            profileDropdown.classList.remove('active');
+            console.log('Profile dropdown closed');
+        }
+    }
+});
+
+// Prevent dropdown from closing when clicking inside it
+document.getElementById('profileDropdown')?.addEventListener('click', (event) => {
+    event.stopPropagation();
+});
+
+// Update profile info when dropdown is shown
+document.getElementById('profileDropdown')?.addEventListener('transitionend', (event) => {
+    if (event.target.classList.contains('active')) {
+        updateProfileInfo();
     }
 }); 
