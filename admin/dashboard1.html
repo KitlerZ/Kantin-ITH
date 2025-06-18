@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Admin - KantinITH</title>
+    <link rel="stylesheet" href="../css/admin.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://unicons.iconscout.com/release/v4.0.8/css/line.css">
+    <script src="../js/admin.js"></script>
+</head>
+<body>
+    <div class="layout">
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <img src="../aset/logo.png" alt="KantinITH Logo" class="logo">
+                <h2>KantinITH</h2>
+            </div>
+            <nav>
+                <a href="manage_users.html"><i class="uil uil-users-alt"></i> Manajemen Pengguna</a>
+                <a href="topup.html"><i class="uil uil-plus-circle"></i> Manajemen Top Up</a>
+                <a href="seller_bills.html"><i class="uil uil-bill"></i> Tagihan Penjual</a>
+                <a href="#" id="logout-sidebar" class="logout-link"><i class="uil uil-sign-out-alt"></i> Logout</a>
+            </nav>
+        </aside>
+
+        <div class="main">
+            <div class="content-area">
+                <header class="topbar">
+                    <div class="topbar-right">
+                        
+                        <div class="topbar-actions">
+                            <div class="profile" onclick="toggleProfile()">
+                                <div class="profile-icon">👤</div>
+                                <span class="profile-name"></span>
+                            </div>
+                        </div>
+                    </div>
+                </header>
+
+                <div class="profile-dropdown" id="profileDropdown">
+                    <a href="#" onclick="showProfileInfoPopup(); return false;"><span>👤</span> Profile</a>
+                    <a href="#"><span>📱</span> Bantuan</a>
+                    <a href="#" id="logout-dropdown" class="logout-link"><i class="uil uil-sign-out-alt"></i> Logout</a>
+                </div>
+
+                <div class="dashboard-content">
+                    <h2>Dashboard Admin</h2>
+                    
+                    <div class="recent-transactions">
+                        <h3>Transaksi Terbaru</h3>
+                        <div id="transactions-list">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div id="logoutPopup" class="popup-overlay" style="display:none;">
+        <div class="popup-box">
+            <div class="popup-header">
+                <h3>Konfirmasi Logout</h3>
+                <span class="close-popup" onclick="closePopup('logoutPopup')">✖</span>
+            </div>
+            <div class="popup-content">
+                <div class="user-info">
+                    <div class="user-avatar">👤</div>
+                    <h4 class="user-name" id="logoutUserName"></h4>
+                    <p class="user-role" id="logoutUserRole"></p>
+                </div>
+                <p class="logout-message">
+                    Apakah Anda yakin ingin keluar dari sistem?
+                </p>
+                <div class="checkout-actions">
+                    <button class="cancel-btn" onclick="closePopup('logoutPopup')">Tidak</button>
+                    <button class="confirm-btn" onclick="confirmLogout()">Ya, Keluar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Popup Profil -->
+    <div class="popup-overlay" id="profileInfoPopup" style="display:none;">
+        <div class="popup-box">
+            <div class="popup-header">
+                <h3>Profil Admin</h3>
+                <span class="close-popup" onclick="closePopup('profileInfoPopup')">✖</span>
+            </div>
+            <div class="popup-content">
+                <div class="user-info">
+                    <div class="user-avatar">👤</div>
+                    <h4 class="user-name" id="profileInfoUserName"></h4>
+                    <p class="user-role" id="profileInfoUserRole"></p>
+                </div>
+                <div class="profile-details">
+                    <p><strong>Email:</strong> <span id="profileInfoEmail">admin@kantinith.com</span></p>
+                    <p><strong>Nomor Telepon:</strong> <span id="profileInfoPhone">081234567890</span></p>
+                </div>
+                <div class="checkout-actions">
+                    <button class="cancel-btn" onclick="closePopup('profileInfoPopup')">Tutup</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('DOM fully loaded. Initializing...');
+            const userIdCheck = localStorage.getItem('loggedInUserId');
+            const userRole = localStorage.getItem('loggedInUserRole');
+
+            if (!userIdCheck || userRole !== 'admin') {
+                console.warn('Invalid access: No loggedInUserId found or wrong role. Redirecting to login.');
+                localStorage.clear();
+                window.location.href = "../index.html";
+                return;
+            }
+
+            // Inisialisasi data profil
+            const profileNameSpan = document.querySelector('.profile-name');
+            const loggedInUsername = localStorage.getItem('loggedInUsername');
+            if (profileNameSpan && loggedInUsername) {
+                profileNameSpan.textContent = loggedInUsername;
+            }
+
+            // Update data dashboard
+            updateAdminSaldo();
+            loadRecentTransactions();
+
+            // Set interval untuk update data secara berkala
+            setInterval(() => {
+                updateAdminSaldo();
+                loadRecentTransactions();
+            }, 30000); // Update setiap 30 detik
+        });
+
+        window.updateAdminSaldo = function() {
+            const userId = localStorage.getItem('loggedInUserId');
+            if (!userId) {
+                console.error('User ID not found in localStorage for saldo update.');
+                document.getElementById('admin-saldo').textContent = 'Rp 0';
+                return;
+            }
+
+            fetch('../backend/admin_saldo.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    action: 'get_admin_saldo',
+                    userId: userId 
+                })
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data && data.hasOwnProperty('saldo')) {
+                    const saldoAmount = typeof data.saldo === 'number' ? data.saldo : parseFloat(data.saldo);
+                    if (!isNaN(saldoAmount)) {
+                        document.getElementById('admin-saldo').textContent = `Rp ${saldoAmount.toLocaleString('id-ID')}`;
+                    } else {
+                        document.getElementById('admin-saldo').textContent = 'Rp Error Format';
+                        console.error('Admin saldo data is not a valid number:', data.saldo);
+                    }
+                } else {
+                    console.error('Failed to fetch admin saldo: Invalid data or missing saldo property', data);
+                    document.getElementById('admin-saldo').textContent = 'Rp Error';
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching admin saldo:', error);
+                document.getElementById('admin-saldo').textContent = 'Rp Error';
+            });
+        }
+
+        window.updateStatsDashboard = function() {
+            fetch('../backend/admin_saldo.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'get_admin_stats' })
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data && data.status === 'success' && data.stats) {
+                    document.getElementById('total-pendapatan').textContent = `Rp ${(parseFloat(data.stats.totalPendapatan) || 0).toLocaleString('id-ID')}`;
+                    document.getElementById('total-transaksi').textContent = (parseInt(data.stats.totalTransaksi) || 0).toLocaleString('id-ID');
+                } else {
+                    console.error('Failed to fetch admin stats for dashboard: Invalid data or status not success', data);
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching admin stats for dashboard:', error);
+            });
+        }
+
+        window.loadRecentTransactions = function() {
+            fetch('../backend/admin_saldo.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'get_admin_transactions' })
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                const transactionsList = document.getElementById('transactions-list');
+                if (!transactionsList) return;
+
+                if (data && data.status === 'success' && Array.isArray(data.transactions)) {
+                    if (data.transactions.length > 0) {
+                        transactionsList.innerHTML = data.transactions.map(transaction => {
+                            const keterangan = transaction.keterangan || 'Transaksi Admin';
+                            const tanggal = new Date(transaction.tanggal).toLocaleString('id-ID', {
+                                year: 'numeric',
+                                month: 'short',
+                                day: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit'
+                            });
+                            const jumlah = parseFloat(transaction.jumlah) || 0;
+                            const tipe = transaction.tipe || 'expense';
+
+                            return `
+                                <div class="transaction-item">
+                                    <div class="transaction-info">
+                                        <div class="transaction-title">${keterangan}</div>
+                                        <div class="transaction-date">${tanggal}</div>
+                                    </div>
+                                    <div class="transaction-amount ${tipe === 'income' ? 'income' : 'expense'}">
+                                        ${tipe === 'income' ? '+' : '-'} Rp ${jumlah.toLocaleString('id-ID')}
+                                    </div>
+                                </div>
+                            `;
+                        }).join('');
+                    } else {
+                        transactionsList.innerHTML = '<p>Tidak ada transaksi terbaru.</p>';
+                    }
+                } else {
+                    transactionsList.innerHTML = '<p>Gagal memuat transaksi: Format data tidak valid.</p>';
+                }
+            })
+            .catch(error => {
+                console.error('Error loading transactions:', error);
+                const transactionsList = document.getElementById('transactions-list');
+                if (transactionsList) {
+                    transactionsList.innerHTML = '<p>Gagal memuat transaksi. Silakan coba lagi nanti.</p>';
+                }
+            });
+        }
+
+        window.toggleProfile = function() {
+            const dropdown = document.getElementById('profileDropdown');
+            if (dropdown) {
+                dropdown.style.display = dropdown.style.display === 'none' ? 'block' : 'none';
+            }
+        }
+
+        window.showProfileInfoPopup = function() {
+            const profileDropdown = document.getElementById("profileDropdown");
+            if (profileDropdown) profileDropdown.style.display = 'none';
+
+            const username = localStorage.getItem('loggedInUsername') || 'Admin KantinITH';
+            const role = localStorage.getItem('loggedInUserRole') || 'Admin';
+            const email = localStorage.getItem('loggedInUserEmail') || 'admin@kantinith.com';
+            const phone = localStorage.getItem('loggedInUserPhone') || 'Belum Tersedia';
+
+            document.getElementById('profileInfoUserName').textContent = username;
+            document.getElementById('profileInfoUserRole').textContent = role;
+            document.getElementById('profileInfoEmail').textContent = email;
+            document.getElementById('profileInfoPhone').textContent = phone;
+
+            const profileInfoPopup = document.getElementById('profileInfoPopup');
+            if (profileInfoPopup) profileInfoPopup.style.display = 'flex';
+        }
+
+        window.logout = function(event) {
+            if (event) { event.preventDefault(); }
+            const logoutPopup = document.getElementById('logoutPopup');
+            if (logoutPopup) { logoutPopup.style.display = 'flex'; }
+        }
+
+        window.confirmLogout = function() {
+            // Call backend logout before clearing local storage and redirecting
+            fetch('../backend/admin_saldo.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'logout' })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    console.log('Server logout successful');
+                } else {
+                    console.error('Server logout failed:', data.message);
+                }
+                // Always clear local storage and redirect after attempting server logout
+                localStorage.clear();
+                window.location.href = "../index.html";
+            })
+            .catch(error => {
+                console.error('Error during server logout:', error);
+                // Clear local storage and redirect even if server logout fails
+                localStorage.clear();
+                window.location.href = "../index.html";
+            });
+        }
+
+        window.closePopup = function(popupId) {
+            const popup = document.getElementById(popupId);
+            if (popup) {
+                popup.style.display = "none";
+            }
+        }
+
+        // Menutup popup ketika mengklik di luar popup
+        window.onclick = function(event) {
+            if (event.target && event.target.classList && event.target.classList.contains('popup-overlay')) {
+                closePopup(event.target.id);
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const currentPath = window.location.pathname.split('/').pop();
+            const sidebarLinks = document.querySelectorAll('.sidebar nav > a');
+            sidebarLinks.forEach(link => {
+                const linkPath = link.getAttribute('href');
+                if (linkPath === currentPath) {
+                    link.classList.add('active');
+                }
+            });
+        });
+    </script>
+</body>
+</html> 

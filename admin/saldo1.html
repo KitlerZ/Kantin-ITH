@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Saldo Admin - KantinITH</title>
+    <link rel="stylesheet" href="../css/admin.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://unicons.iconscout.com/release/v4.0.8/css/line.css">
+    <script src="../js/admin.js"></script>
+</head>
+<body>
+    <div class="layout">
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <img src="../aset/logo.png" alt="KantinITH Logo" class="logo">
+                <h2>KantinITH</h2>
+            </div>
+            <nav>
+                <a href="dashboard.html"><i class="uil uil-estate"></i> Dashboard</a>
+                <a href="#" class="active"><i class="uil uil-wallet"></i> Saldo Admin</a>
+                <a href="manage_users.html"><i class="uil uil-users-alt"></i> Manajemen Pengguna</a>
+                <a href="topup.html"><i class="uil uil-plus-circle"></i> Manajemen Top Up</a>
+                <a href="seller_bills.html"><i class="uil uil-bill"></i> Tagihan Penjual</a>
+                <a href="#" id="logout-sidebar" class="logout-link"><i class="uil uil-sign-out-alt"></i> Logout</a>
+            </nav>
+        </aside>
+
+        <div class="main">
+            <div class="content-area">
+                <header class="topbar">
+                    <div class="topbar-right">
+                        <div class="saldo-box">
+                            Saldo Admin: <span id="admin-saldo">Rp 0</span>
+                        </div>
+                        <div class="topbar-actions">
+                            <div class="profile" onclick="toggleProfile()">
+                                <div class="profile-icon">👤</div>
+                                <span class="profile-name"></span>
+                            </div>
+                        </div>
+                    </div>
+                </header>
+
+                <div class="profile-dropdown" id="profileDropdown">
+                    <a href="#" onclick="showProfileInfoPopup(); return false;"><span>👤</span> Profile</a>
+                    <a href="#"><span>📱</span> Bantuan</a>
+                    <a href="#" id="logout-dropdown" class="logout-link"><span>🚪</span> Logout</a>
+                </div>
+
+                <div class="dashboard-content">
+                    <h2>Riwayat Transaksi Admin</h2>
+                    <div class="filter-section">
+                        <select id="filter-type" onchange="loadTransactionHistory()">
+                            <option value="all">Semua Tipe</option>
+                            <option value="income">Pemasukan</option>
+                            <option value="expense">Pengeluaran</option>
+                        </select>
+                        <select id="filter-period" onchange="loadTransactionHistory()">
+                            <option value="all">Semua Periode</option>
+                            <option value="today">Hari Ini</option>
+                            <option value="week">Minggu Ini</option>
+                            <option value="month">Bulan Ini</option>
+                            <option value="year">Tahun Ini</option>
+                        </select>
+                        <select id="filter-role" onchange="loadTransactionHistory()">
+                            <option value="all">Semua Role</option>
+                            <option value="admin">Admin</option>
+                            <option value="buyer">Pembeli</option>
+                            <option value="seller">Penjual</option>
+                        </select>
+                    </div>
+                    <div id="transactions-list">
+                        <!-- Transaction history will be loaded here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="logoutPopup" class="popup-overlay" style="display:none;">
+        <div class="popup-box">
+            <div class="popup-header">
+                <h3>Konfirmasi Logout</h3>
+                <span class="close-popup" onclick="closePopup('logoutPopup')">✖</span>
+            </div>
+            <div class="popup-content">
+                <div class="user-info">
+                    <div class="user-avatar">👤</div>
+                    <h4 class="user-name" id="logoutUserName"></h4>
+                    <p class="user-role" id="logoutUserRole"></p>
+                </div>
+                <p class="logout-message">
+                    Apakah Anda yakin ingin keluar dari sistem?
+                </p>
+                <div class="checkout-actions">
+                    <button class="cancel-btn" onclick="closePopup('logoutPopup')">Tidak</button>
+                    <button class="confirm-btn" onclick="confirmLogout()">Ya, Keluar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('DOM fully loaded. Initializing...');
+            const userIdCheck = localStorage.getItem('loggedInUserId');
+            const userRole = localStorage.getItem('loggedInUserRole');
+
+            // --- Reverted sidebar active link logic ---
+            const currentPath = window.location.pathname.split('/').pop();
+            const sidebarLinks = document.querySelectorAll('.sidebar nav > a');
+            sidebarLinks.forEach(link => {
+                const linkPath = link.getAttribute('href');
+                if (linkPath === currentPath) {
+                    link.classList.add('active');
+                }
+            });
+            // --- End reverted sidebar active link logic ---
+
+            if (!userIdCheck || userRole !== 'admin') {
+                console.warn('Invalid access: No loggedInUserId found or wrong role. Redirecting to login.');
+                localStorage.clear();
+                window.location.href = "../index.html";
+                return;
+            }
+
+            updateAdminSaldo();
+            loadTransactionHistory();
+
+            const profileNameSpan = document.querySelector('.profile-name');
+            const loggedInUsername = localStorage.getItem('loggedInUsername');
+            if (profileNameSpan && loggedInUsername) {
+                profileNameSpan.textContent = loggedInUsername;
+            }
+        });
+
+        window.updateAdminSaldo = function() {
+            console.log('Fetching admin saldo...');
+            const userId = localStorage.getItem('loggedInUserId');
+            if (!userId) {
+                console.error('User ID not found in localStorage for saldo update.');
+                document.getElementById('admin-saldo').textContent = 'Rp 0';
+                return;
+            }
+
+            console.log('Fetching admin saldo for userId:', userId);
+
+            fetch('../backend/admin_saldo.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    action: 'get_admin_saldo',
+                    userId: userId 
+                })
+            })
+            .then(response => {
+                console.log('Raw response status for admin saldo:', response.status);
+                if (!response.ok) {
+                    // Attempt to read response text for more info on non-OK status
+                    return response.text().then(text => {
+                         console.error('Non-OK response text:', text);
+                         throw new Error(`HTTP error! status: ${response.status}, Response: ${text}`);
+                    });
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log('Parsed JSON data for admin saldo:', data);
+                if (data && data.status === 'success' && data.hasOwnProperty('saldo')) {
+                    const saldo = parseFloat(data.saldo);
+                    if (!isNaN(saldo)) {
+                        document.getElementById('admin-saldo').textContent = `Rp ${saldo.toLocaleString('id-ID')}`;
+                    } else {
+                        document.getElementById('admin-saldo').textContent = 'Rp Error Format';
+                        console.error('Admin saldo data is not a valid number:', data.saldo);
+                    }
+                } else {
+                    console.error('Failed to fetch admin saldo: Invalid data, missing saldo property, or status not success', data);
+                    document.getElementById('admin-saldo').textContent = 'Rp Error';
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching admin saldo:', error);
+                document.getElementById('admin-saldo').textContent = 'Rp Error';
+            });
+        }
+
+        window.loadTransactionHistory = function() {
+            console.log('Fetching transaction history...');
+            const filterType = document.getElementById('filter-type').value;
+            const filterPeriod = document.getElementById('filter-period').value;
+            const filterRole = document.getElementById('filter-role').value;
+
+            fetch('../backend/admin_saldo.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    action: 'get_admin_transactions',
+                    filterType: filterType,
+                    filterPeriod: filterPeriod,
+                    filterRole: filterRole
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data && data.status === 'success') {
+                    const transactionsList = document.getElementById('transactions-list');
+                    if (data.transactions && data.transactions.length > 0) {
+                        let transactionsHtml = `
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Tanggal</th>
+                                        <th>Pembeli</th>
+                                        <th>Keterangan</th>
+                                        <th>Jumlah</th>
+                                        <th>Tipe</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                        `;
+                        data.transactions.forEach(transaction => {
+                            transactionsHtml += `
+                                <tr>
+                                    <td>${transaction.date}</td>
+                                    <td>${transaction.username || 'User Tidak Ditemukan'}</td>
+                                    <td>${transaction.title}</td>
+                                    <td class="transaction-amount ${transaction.type === 'income' ? 'income' : 'expense'}">${transaction.type === 'income' ? '+' : '-'} Rp ${parseFloat(transaction.amount || 0).toLocaleString('id-ID')}</td>
+                                    <td>${transaction.type}</td>
+                                </tr>
+                            `;
+                        });
+                        transactionsHtml += `
+                                </tbody>
+                            </table>
+                        `;
+                        transactionsList.innerHTML = transactionsHtml;
+                    } else {
+                        transactionsList.innerHTML = '<div class="transaction-item">Tidak ada transaksi ditemukan.</div>';
+                    }
+
+                } else {
+                    console.error('Failed to fetch transaction history:', data);
+                    document.getElementById('transactions-list').innerHTML = '<div class="transaction-item">Gagal memuat riwayat transaksi.</div>';
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching transaction history:', error);
+                 document.getElementById('transactions-list').innerHTML = '<div class="transaction-item">Error memuat riwayat transaksi.</div>';
+            });
+        }
+
+        window.toggleProfile = function() {
+            console.log('Toggling profile dropdown...');
+            const dropdown = document.getElementById('profileDropdown');
+            if(dropdown) {
+                dropdown.classList.toggle('active');
+            }
+        }
+
+        window.showProfileInfoPopup = function() {
+            console.log('Showing profile info popup...');
+            const profileDropdown = document.getElementById("profileDropdown");
+            if (profileDropdown) profileDropdown.classList.remove("active");
+
+            const username = localStorage.getItem('loggedInUsername') || 'Admin KantinITH';
+            const role = localStorage.getItem('loggedInUserRole') || 'Admin';
+            // Assuming email and phone are not stored in localStorage, use placeholders or fetch if needed
+            const email = 'admin@kantinith.com'; // Placeholder
+            const phone = 'Belum Tersedia'; // Placeholder
+
+            const profileInfoUserName = document.getElementById('profileInfoUserName');
+            const profileInfoUserRole = document.getElementById('profileInfoUserRole');
+            const profileInfoEmail = document.getElementById('profileInfoEmail');
+            const profileInfoPhone = document.getElementById('profileInfoPhone');
+            const profileInfoPopup = document.getElementById('profileInfoPopup');
+
+            if(profileInfoUserName) profileInfoUserName.textContent = username;
+            if(profileInfoUserRole) profileInfoUserRole.textContent = role;
+            if(profileInfoEmail) profileInfoEmail.textContent = email;
+            if(profileInfoPhone) profileInfoPhone.textContent = phone;
+
+            if(profileInfoPopup) profileInfoPopup.style.display = 'flex';
+        }
+
+        window.logout = function(event) {
+            console.log('Attempting to logout...');
+            if (event) {
+                event.preventDefault();
+            }
+            const logoutPopup = document.getElementById('logoutPopup');
+            if (logoutPopup) {
+                logoutPopup.style.display = 'flex';
+            }
+        }
+
+        window.closePopup = function(popupId) {
+            console.log(`Closing popup: ${popupId}`);
+            const popup = document.getElementById(popupId);
+            if (popup) {
+                popup.style.display = "none";
+            }
+        }
+        window.onclick = function(event) {
+            if (event.target && event.target.classList && event.target.classList.contains('popup-overlay')) {
+                closePopup(event.target.id);
+            }
+        }
+
+        window.fetchAdminStats = function() {
+            fetch('../backend/admin_saldo.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'get_admin_stats' })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data && data.status === 'success' && data.hasOwnProperty('totalIncome') && data.hasOwnProperty('totalTransactions')) {
+                    document.getElementById('total-income').textContent = `Rp ${parseFloat(data.totalIncome).toLocaleString('id-ID')}`;
+                    document.getElementById('total-transactions').textContent = parseInt(data.totalTransactions);
+                } else {
+                    console.error('Failed to fetch admin stats: Invalid data or missing properties', data);
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching admin stats:', error);
+            });
+        }
+    </script>
+</body>
+</html> 

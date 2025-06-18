@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KantinITH - Admin - Manajemen Top Up</title>
+    <link rel="stylesheet" href="../css/admin.css">
+    <link rel="stylesheet" href="https://unicons.iconscout.com/release/v4.0.8/css/line.css">
+    <script src="../js/admin.js"></script>
+</head>
+<body>
+
+    <div class="layout">
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <img src="../aset/logo.png" alt="Logo" class="logo">
+                <h2>KantinITH</h2>
+            </div>
+            <nav>
+                <a href="manage_users.html"><i class="uil uil-users-alt"></i> Manajemen Pengguna</a>
+                <a href="#" class="active"><i class="uil uil-plus-circle"></i> Manajemen Top Up</a>
+                <a href="seller_bills.html"><i class="uil uil-bill"></i> Tagihan Penjual</a>
+                <a href="#" id="logout-sidebar" class="logout-link"><i class="uil uil-signout"></i> Logout</a>
+            </nav>
+        </aside>
+
+        <div class="main">
+
+            <div class="content-area">
+                <header class="topbar">
+                     <div class="topbar-right">
+                        <div class="topbar-actions">
+                            <div class="profile" onclick="toggleProfile()">
+                                <div class="profile-icon"><i class="uil uil-user"></i></div>
+                                <span class="profile-name"></span>
+                            </div>
+                        </div>
+                    </div>
+                </header>
+
+                 <div class="profile-dropdown" id="profileDropdown">
+                    <a href="#" onclick="showProfileInfoPopup(); return false;"><span><i class="uil uil-user"></i></span> Profile</a>
+                    <a href="#"><span><i class="uil uil-question-circle"></i></span> Bantuan</a>
+                    <a href="#" id="logout-dropdown" class="logout-link"><i class="uil uil-sign-out-alt"></i> Logout</a>
+                </div>
+
+                <h2>Manajemen Top Up</h2>
+
+                <!-- Section for Pending Top-Up Requests -->
+                <section class="card" style="margin-bottom: 30px;">
+                    <div class="section-header">
+                        <h2>Permintaan Top Up Menunggu Konfirmasi</h2>
+                    </div>
+                    <div class="card-content">
+                        <p id="no-pending-topups" style="display: none; text-align: center; color: #888;">Tidak ada permintaan top up yang tertunda.</p>
+                        <div class="table-responsive">
+                            <table class="data-table" id="pending-topup-table">
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Pembeli (ID)</th>
+                                        <th>Username</th>
+                                        <th>Jumlah</th>
+                                        <th>Waktu Ajuan</th>
+                                        <th>Aksi</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <!-- Pending top-ups will be loaded here by JavaScript -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Section for All Top-Up History -->
+                <section class="card">
+                    <div class="section-header">
+                        <h2>Riwayat Semua Top Up</h2>
+                    </div>
+                    <div class="card-content">
+                        <p id="no-all-topups" style="display: none; text-align: center; color: #888;">Tidak ada riwayat top up.</p>
+                        <div class="table-responsive">
+                            <table class="data-table" id="all-topup-history-table">
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Pembeli (ID)</th>
+                                        <th>Username</th>
+                                        <th>Jumlah</th>
+                                        <th>Waktu Ajuan</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <!-- All top-up history will be loaded here by JavaScript -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- Popups (Logout, Profile Info will be shared) -->
+     <div id="logoutPopup" class="popup-overlay">
+        <div class="popup-box">
+            <div class="popup-header">
+                <h3>Konfirmasi Keluar</h3>
+                <span class="close-popup" onclick="closePopup('logoutPopup')">✖</span>
+            </div>
+            <div class="popup-content">
+                <div class="user-info">
+                    <div class="user-avatar">
+                        <i class="uil uil-user"></i>
+                    </div>
+                    <div class="user-details">
+                        <h4 class="user-name" id="logoutUserName"></h4>
+                        <p class="user-role" id="logoutUserRole"></p>
+                    </div>
+                </div>
+                <p class="logout-message">
+                    Apakah Anda yakin ingin keluar dari sistem?
+                </p>
+                <div class="checkout-actions">
+                    <button class="cancel-btn" onclick="closePopup('logoutPopup')">Tidak</button>
+                    <button class="confirm-btn" id="confirmLogoutBtn">Ya, Keluar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="popup-overlay" id="profileInfoPopup">
+        <div class="popup-box">
+            <div class="popup-header">
+                <h3>Profil Admin</h3>
+                <span class="close-popup" onclick="closePopup('profileInfoPopup')">✖</span>
+            </div>
+            <div class="popup-content">
+                <div class="user-info">
+                    <div class="user-avatar"><i class="uil uil-user"></i></div>
+                    <h4 class="user-name" id="profileInfoUserName"></h4>
+                    <p class="user-role" id="profileInfoUserRole"></p>
+                </div>
+                <div class="profile-details">
+                    <p><strong>Email:</strong> <span id="profileInfoEmail"></span></p>
+                    <p><strong>Nomor Telepon:</strong> <span id="profileInfoPhone"></span></p>
+                </div>
+                <div class="checkout-actions">
+                    <button class="cancel-btn" onclick="closePopup('profileInfoPopup')">Tutup</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Success and Error Popups -->
+    <div id="successPopup" class="popup-overlay">
+        <div class="popup-box success-box">
+            <span class="success-icon">✅</span>
+            <span class="success-message" id="successMessage">Pesan sukses akan muncul di sini.</span>
+            <button class="btn primary-btn" onclick="closePopup('successPopup')">OK</button>
+        </div>
+    </div>
+
+    <div id="errorPopup" class="popup-overlay">
+        <div class="popup-box error-box">
+            <span class="error-icon">❌</span>
+            <span class="error-message" id="errorMessage">Pesan error akan muncul di sini.</span>
+            <button class="btn danger-btn" onclick="closePopup('errorPopup')">OK</button>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // --- Reverted sidebar active link logic ---
+            const currentPath = window.location.pathname.split('/').pop();
+            const sidebarLinks = document.querySelectorAll('.sidebar nav > a');
+            sidebarLinks.forEach(link => {
+                const linkPath = link.getAttribute('href');
+                if (linkPath === currentPath) {
+                    link.classList.add('active');
+                }
+            });
+            // --- End reverted sidebar active link logic ---
+
+            // Existing logic for topup.html
+            const userRole = localStorage.getItem('loggedInUserRole');
+            if (userRole !== 'admin') {
+                alert('Akses ditolak. Anda harus login sebagai admin.');
+                window.location.href = '../index.html';
+                return;
+            }
+            loadAdminTopups();
+            updateProfileInfo();
+        });
+    </script>
+
+</body>
+</html> 
